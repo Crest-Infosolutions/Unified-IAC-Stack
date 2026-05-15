@@ -1,0 +1,20 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: ssh-key
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: SecretStore
+    name: azure-keyvault
+  target:
+    name: ssh-key
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        id_rsa: '{{ .privateKey }}'
+  data:
+    - secretKey: privateKey
+      remoteRef:
+        key: ssh-key

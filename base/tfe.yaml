@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tfe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tfe
+  template:
+    metadata:
+      labels:
+        app: tfe
+    spec:
+      serviceAccountName: tfe
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: hc-pull-secret
+      securityContext:
+        runAsUser: 0
+        runAsNonRoot: false
+      initContainers:
+        - name: tfe-init
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              cp /tls-src/tls.crt /tls-dst/cert.pem && \
+              cp /tls-src/tls.crt /tls-dst/bundle.pem && \
+              cp /tls-src/tls.key /tls-dst/key.pem && \
+              chmod 644 /tls-dst/cert.pem /tls-dst/bundle.pem /tls-dst/key.pem
+          volumeMounts:
+            - mountPath: /tls-src
+              name: tfe-tls-src
+              readOnly: true
+            - mountPath: /tls-dst
+              name: tfe-tls-writable
+      containers:
+        - name: tfe
+          image: images.releases.hashicorp.com/hashicorp/terraform-enterprise:v202501-1
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: true
+            capabilities:
+              add:
+                - NET_BIND_SERVICE
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+          envFrom:
+            - configMapRef:
+                name: tfe-config
+            - secretRef:
+                name: tfe-secrets
+          ports:
+            - containerPort: 8443
+              name: https
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - mountPath: /var/lib/terraform-enterprise
+              name: tfe-storage
+            - mountPath: /etc/ssl/private/terraform-enterprise
+              name: tfe-tls-writable
+          readinessProbe:
+            httpGet:
+              path: /_health_check
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            failureThreshold: 40
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: 3Gi
+              cpu: 350m
+            limits:
+              memory: 4Gi
+              cpu: 2000m
+      volumes:
+        - name: tfe-storage
+          persistentVolumeClaim:
+            claimName: tfe-pvc
+        - name: tfe-tls-src
+          secret:
+            secretName: tfe-tls
+        - name: tfe-tls-writable
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tfe
+spec:
+  selector:
+    app: tfe
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+    - name: http
+      port: 80
+      targetPort: 8080

@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: infra-pipeline
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: infra-pipeline
+      automountServiceAccountToken: true
+      restartPolicy: Never
+      containers:
+        - name: pipeline
+          image: pipeline-image
+          env:
+            - name: ARM_OIDC_TOKEN_FILE_PATH
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - configMapRef:
+                name: infra-pipeline-config
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eux
+
+              VAULT_AUTH_PATH="${VAULT_AUTH_PATH:-auth/${VAULT_AUTH_METHOD}/login}"
+              JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              VAULT_TOKEN=$(vault write -field=token "$VAULT_AUTH_PATH" role="$VAULT_ROLE" jwt="$JWT")
+              export VAULT_TOKEN
+
+              GITHUB_TOKEN=$(vault kv get -field=token "$VAULT_GITHUB_TOKEN_PATH")
+              OIDC_TOKEN_FILE="${AZURE_FEDERATED_TOKEN_FILE:-${ARM_OIDC_TOKEN_FILE_PATH}}"
+
+              export TF_VAR_github_token="$GITHUB_TOKEN"
+              export TF_VAR_admin_username="$TF_VAR_ADMIN_USERNAME"
+              export TF_VAR_ssh_public_key="$TF_VAR_SSH_PUBLIC_KEY"
+              export ARM_OIDC_TOKEN="$(cat "$OIDC_TOKEN_FILE")"
+              export ARM_OIDC_TOKEN_FILE_PATH="$OIDC_TOKEN_FILE"
+
+              git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${LZ_MODULES_REPO}.git" lz-modules
+
+              if [ "${RUN_PACKER}" = "true" ]; then
+                git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${PACKER_REPO}.git" packer-images
+                git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${IMAGE_REGISTRY_REPO}.git" image-registry
+
+                az login --service-principal \
+                  --username "$ARM_CLIENT_ID" \
+                  --tenant "$ARM_TENANT_ID" \
+                  --federated-token "$(cat "$OIDC_TOKEN_FILE")"
+
+                IMAGE_VERSION="${IMAGE_VERSION:-$(date +%Y.%m.%d%H%M)}"
+
+                cd packer-images
+                packer init .
+                packer build -var "image_version=$IMAGE_VERSION" "$PACKER_TEMPLATE"
+
+                cd ../image-registry
+                jq --arg image_key "$IMAGE_REGISTRY_KEY" --arg image_version "$IMAGE_VERSION" '.[$image_key]=$image_version' "$IMAGE_REGISTRY_FILE" > /tmp/images.json
+                mv /tmp/images.json "$IMAGE_REGISTRY_FILE"
+                git config --global user.email "${GIT_AUTHOR_EMAIL:-pipeline@local}"
+                git config --global user.name "${GIT_AUTHOR_NAME:-pipeline}"
+                git add "$IMAGE_REGISTRY_FILE"
+                git commit -m "Update ${IMAGE_REGISTRY_KEY} image to ${IMAGE_VERSION}" || true
+                git push
+                cd ../lz-modules
+              else
+                cd lz-modules
+              fi
+
+              terraform init -reconfigure
+
+              case "$TERRAFORM_ACTION" in
+                apply)
+                  terraform plan -out /tmp/tfplan
+                  terraform apply -auto-approve /tmp/tfplan
+                  ;;
+                destroy)
+                  terraform destroy -auto-approve
+                  ;;
+                *)
+                  echo "Unsupported TERRAFORM_ACTION: $TERRAFORM_ACTION" >&2
+                  exit 1
+                  ;;
+              esac

@@ -1,0 +1,69 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: tfeplatform
+resources:
+  - namespace.yaml
+  - ../../base
+  - ../../integrations/azure-keyvault/common
+configMapGenerator:
+  - name: platform-config
+    envs:
+      - config/platform.env
+  - name: keyvault-config
+    envs:
+      - config/keyvault.env
+  - name: tfe-config
+    envs:
+      - config/tfe.env
+  - name: tfe-agent-config
+    envs:
+      - config/agent.env
+generatorOptions:
+  disableNameSuffixHash: true
+replacements:
+  - source:
+      kind: ConfigMap
+      name: platform-config
+      fieldPath: data.ARM_CLIENT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: tfe-agent
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/client-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: keyvault-config
+      fieldPath: data.KEYVAULT_CLIENT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: azure-keyvault-reader
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/client-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: keyvault-config
+      fieldPath: data.KEYVAULT_TENANT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: azure-keyvault-reader
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/tenant-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: keyvault-config
+      fieldPath: data.KEYVAULT_URL
+    targets:
+      - select:
+          kind: SecretStore
+          name: azure-keyvault
+        fieldPaths:
+          - spec.provider.azurekv.vaultUrl

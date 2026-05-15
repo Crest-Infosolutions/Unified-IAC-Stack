@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: config-pipeline
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: config-pipeline
+      automountServiceAccountToken: true
+      restartPolicy: Never
+      containers:
+        - name: pipeline
+          image: pipeline-image
+          env:
+            - name: ARM_OIDC_TOKEN_FILE_PATH
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - configMapRef:
+                name: config-pipeline-config
+          volumeMounts:
+            - name: ssh-key
+              mountPath: /root/.ssh
+              readOnly: true
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eux
+
+              VAULT_AUTH_PATH="${VAULT_AUTH_PATH:-auth/${VAULT_AUTH_METHOD}/login}"
+              JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              VAULT_TOKEN=$(vault write -field=token "$VAULT_AUTH_PATH" role="$VAULT_ROLE" jwt="$JWT")
+              export VAULT_TOKEN
+
+              GITHUB_TOKEN=$(vault kv get -field=token "$VAULT_GITHUB_TOKEN_PATH")
+              OIDC_TOKEN_FILE="${AZURE_FEDERATED_TOKEN_FILE:-${ARM_OIDC_TOKEN_FILE_PATH}}"
+
+              export TF_VAR_github_token="$GITHUB_TOKEN"
+              export TF_VAR_admin_username="$TF_VAR_ADMIN_USERNAME"
+              export TF_VAR_ssh_public_key="$TF_VAR_SSH_PUBLIC_KEY"
+              export ARM_OIDC_TOKEN="$(cat "$OIDC_TOKEN_FILE")"
+              export ARM_OIDC_TOKEN_FILE_PATH="$OIDC_TOKEN_FILE"
+
+              git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${LZ_MODULES_REPO}.git" lz-modules
+              git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${ANSIBLE_REPO}.git" ansible
+
+              cd lz-modules
+              terraform init -input=false
+              terraform output -json > /tmp/tf-output.json
+
+              cd ../ansible
+              python3 generate_inventory.py /tmp/tf-output.json > inventory.ini
+
+              if [ "${SSH_WAIT_SECONDS:-0}" -gt 0 ]; then
+                sleep "$SSH_WAIT_SECONDS"
+              fi
+
+              ansible all -i inventory.ini -m ping
+              ansible-playbook "$ANSIBLE_PLAYBOOK" -i inventory.ini
+      volumes:
+        - name: ssh-key
+          secret:
+            secretName: ssh-key
+            defaultMode: 0600

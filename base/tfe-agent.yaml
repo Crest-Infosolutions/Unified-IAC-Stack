@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tfe-agent
+  labels:
+    app: tfe-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tfe-agent
+  template:
+    metadata:
+      labels:
+        app: tfe-agent
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: tfe-agent
+      automountServiceAccountToken: true
+      containers:
+        - name: tfe-agent
+          image: hashicorp/tfc-agent:latest
+          imagePullPolicy: Always
+          env:
+            - name: ARM_OIDC_TOKEN_FILE
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+            - name: ARM_OIDC_TOKEN_FILE_PATH
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - configMapRef:
+                name: tfe-agent-config
+            - secretRef:
+                name: tfe-agent-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonRoot: false
+            runAsUser: 0
+      restartPolicy: Always

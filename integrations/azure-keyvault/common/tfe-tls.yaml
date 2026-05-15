@@ -1,0 +1,25 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: tfe-tls
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: SecretStore
+    name: azure-keyvault
+  target:
+    name: tfe-tls
+    creationPolicy: Owner
+    template:
+      type: kubernetes.io/tls
+      engineVersion: v2
+      data:
+        tls.crt: '{{ .tlsCrt }}'
+        tls.key: '{{ .tlsKey }}'
+  data:
+    - secretKey: tlsCrt
+      remoteRef:
+        key: tfe-tls-crt
+    - secretKey: tlsKey
+      remoteRef:
+        key: tfe-tls-key

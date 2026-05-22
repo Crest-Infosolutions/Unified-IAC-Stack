@@ -1,0 +1,84 @@
+namespace: tfeplatform
+createNamespace: true
+
+platformHostname: tfe.example.corp
+serviceType: LoadBalancer
+serviceInternalLoadBalancer: false
+tfeStorageSizeGi: 20Gi
+tfeStorageClassName: managed-csi
+
+keyVaultUrl: https://example-keyvault.vault.azure.net
+keyVaultClientId: 11111111-1111-1111-1111-111111111111
+keyVaultTenantId: 22222222-2222-2222-2222-222222222222
+externalSecretsRefreshInterval: 1h
+
+armClientId: 33333333-3333-3333-3333-333333333333
+armTenantId: 22222222-2222-2222-2222-222222222222
+armSubscriptionId: 44444444-4444-4444-4444-444444444444
+armUseOidc: true
+armUseCli: false
+
+databaseHost: postgres.example.corp:5432
+databaseName: tfe
+databaseUser: tfe
+databaseParameters: sslmode=require
+
+redisUrl: redis://redis.example.corp:6379
+objectStorageAccountName: exampleaccount
+objectStorageContainer: tfestate
+
+agentTfcAddress: https://tfe.example.corp
+agentLogLevel: info
+agentImagePullPolicy: IfNotPresent
+
+vaultEnabled: false
+vaultAddress: https://vault.example.corp:8200
+vaultClusterAddress: https://vault.example.corp:8201
+vaultAuthMethod: kubernetes
+vaultRole: tfe-agent
+tfeVaultDisableMlock: true
+
+tfeReplicaCount: 1
+agentReplicaCount: 1
+
+kubernetesPullSecretName: hc-pull-secret
+kubernetesTfeSecretName: tfe-secrets
+kubernetesTfeAgentSecretName: tfe-agent-secrets
+kubernetesTlsSecretName: tfe-tls
+keyVaultTfeSecretName: tfe-secrets
+keyVaultTfeAgentSecretName: tfe-agent-secrets
+keyVaultTlsCrtSecretName: tfe-tls-crt
+keyVaultTlsKeySecretName: tfe-tls-key
+keyVaultPullSecretName: hc-pull-secret
+
+tfeResources:
+  requests:
+    memory: 3Gi
+    cpu: 350m
+  limits:
+    memory: 4Gi
+    cpu: 2000m
+
+agentResources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 512Mi
+
+global:
+  azure:
+    images:
+      tfe:
+        repository: images.releases.hashicorp.com/hashicorp/terraform-enterprise
+        tag: v202501-1
+        digest: ""
+      tfeAgent:
+        repository: hashicorp/tfc-agent
+        tag: 1.28.10
+        digest: ""
+      tlsInit:
+        repository: busybox
+        tag: 1.37.0
+        digest: ""

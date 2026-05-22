@@ -1,0 +1,165 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "extensionResourceName": {
+      "type": "String",
+      "metadata": {
+        "description": "The name of the Marketplace cluster extension resource."
+      }
+    },
+    "clusterResourceName": {
+      "type": "String",
+      "metadata": {
+        "description": "The name of the existing AKS cluster."
+      }
+    },
+    "location": {
+      "type": "String",
+      "metadata": {
+        "description": "The location of the AKS cluster resource."
+      }
+    },
+    "namespace": {
+      "type": "String",
+      "defaultValue": "tfeplatform"
+    },
+    "platformHostname": {
+      "type": "String"
+    },
+    "serviceInternalLoadBalancer": {
+      "type": "Bool",
+      "defaultValue": false
+    },
+    "tfeStorageSizeGi": {
+      "type": "String",
+      "defaultValue": "20Gi"
+    },
+    "keyVaultUrl": {
+      "type": "String"
+    },
+    "keyVaultClientId": {
+      "type": "String"
+    },
+    "keyVaultTenantId": {
+      "type": "String"
+    },
+    "armClientId": {
+      "type": "String"
+    },
+    "armTenantId": {
+      "type": "String"
+    },
+    "armSubscriptionId": {
+      "type": "String"
+    },
+    "databaseHost": {
+      "type": "String"
+    },
+    "databaseName": {
+      "type": "String"
+    },
+    "databaseUser": {
+      "type": "String"
+    },
+    "databaseParameters": {
+      "type": "String",
+      "defaultValue": "sslmode=require"
+    },
+    "redisUrl": {
+      "type": "String"
+    },
+    "objectStorageAccountName": {
+      "type": "String"
+    },
+    "objectStorageContainer": {
+      "type": "String"
+    },
+    "agentLogLevel": {
+      "type": "String",
+      "defaultValue": "info",
+      "allowedValues": [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error"
+      ]
+    },
+    "vaultEnabled": {
+      "type": "Bool",
+      "defaultValue": false
+    },
+    "vaultAddress": {
+      "type": "String",
+      "defaultValue": ""
+    },
+    "vaultClusterAddress": {
+      "type": "String",
+      "defaultValue": ""
+    },
+    "vaultAuthMethod": {
+      "type": "String",
+      "defaultValue": "kubernetes"
+    },
+    "vaultRole": {
+      "type": "String",
+      "defaultValue": "tfe-agent"
+    }
+  },
+  "variables": {
+    "plan-name": "DONOTMODIFY",
+    "plan-publisher": "DONOTMODIFY",
+    "plan-offerID": "DONOTMODIFY",
+    "releaseTrain": "DONOTMODIFY",
+    "clusterExtensionTypeName": "DONOTMODIFY"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.KubernetesConfiguration/extensions",
+      "apiVersion": "2024-11-01",
+      "name": "[parameters('extensionResourceName')]",
+      "scope": "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]",
+      "properties": {
+        "extensionType": "[variables('clusterExtensionTypeName')]",
+        "autoUpgradeMinorVersion": true,
+        "releaseTrain": "[variables('releaseTrain')]",
+        "configurationSettings": {
+          "namespace": "[parameters('namespace')]",
+          "createNamespace": true,
+          "platformHostname": "[parameters('platformHostname')]",
+          "serviceType": "LoadBalancer",
+          "serviceInternalLoadBalancer": "[parameters('serviceInternalLoadBalancer')]",
+          "tfeStorageSizeGi": "[parameters('tfeStorageSizeGi')]",
+          "keyVaultUrl": "[parameters('keyVaultUrl')]",
+          "keyVaultClientId": "[parameters('keyVaultClientId')]",
+          "keyVaultTenantId": "[parameters('keyVaultTenantId')]",
+          "armClientId": "[parameters('armClientId')]",
+          "armTenantId": "[parameters('armTenantId')]",
+          "armSubscriptionId": "[parameters('armSubscriptionId')]",
+          "databaseHost": "[parameters('databaseHost')]",
+          "databaseName": "[parameters('databaseName')]",
+          "databaseUser": "[parameters('databaseUser')]",
+          "databaseParameters": "[parameters('databaseParameters')]",
+          "redisUrl": "[parameters('redisUrl')]",
+          "objectStorageAccountName": "[parameters('objectStorageAccountName')]",
+          "objectStorageContainer": "[parameters('objectStorageContainer')]",
+          "agentTfcAddress": "[concat('https://', parameters('platformHostname'))]",
+          "agentLogLevel": "[parameters('agentLogLevel')]",
+          "vaultEnabled": "[parameters('vaultEnabled')]",
+          "vaultAddress": "[parameters('vaultAddress')]",
+          "vaultClusterAddress": "[parameters('vaultClusterAddress')]",
+          "vaultAuthMethod": "[parameters('vaultAuthMethod')]",
+          "vaultRole": "[parameters('vaultRole')]"
+        },
+        "configurationProtectedSettings": {}
+      },
+      "plan": {
+        "name": "[variables('plan-name')]",
+        "publisher": "[variables('plan-publisher')]",
+        "product": "[variables('plan-offerID')]"
+      }
+    }
+  ],
+  "outputs": {}
+}

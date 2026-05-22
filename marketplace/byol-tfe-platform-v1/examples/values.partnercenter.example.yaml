@@ -1,0 +1,30 @@
+namespace: tfeplatform
+platformHostname: tfe.example.corp
+serviceType: LoadBalancer
+serviceInternalLoadBalancer: false
+tfeStorageSizeGi: 20Gi
+
+keyVaultUrl: https://example-keyvault.vault.azure.net
+keyVaultClientId: 11111111-1111-1111-1111-111111111111
+keyVaultTenantId: 22222222-2222-2222-2222-222222222222
+
+armClientId: 33333333-3333-3333-3333-333333333333
+armTenantId: 22222222-2222-2222-2222-222222222222
+armSubscriptionId: 44444444-4444-4444-4444-444444444444
+
+databaseHost: postgres.example.corp:5432
+databaseName: tfe
+databaseUser: tfe
+databaseParameters: sslmode=require
+
+redisUrl: redis://redis.example.corp:6379
+objectStorageAccountName: exampleaccount
+objectStorageContainer: tfestate
+
+agentLogLevel: info
+
+vaultEnabled: false
+vaultAddress: https://vault.example.corp:8200
+vaultClusterAddress: https://vault.example.corp:8201
+vaultAuthMethod: kubernetes
+vaultRole: tfe-agent

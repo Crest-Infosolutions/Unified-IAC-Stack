@@ -1,0 +1,181 @@
+name: Marketplace Package
+
+on:
+  pull_request:
+    paths:
+      - marketplace/byol-tfe-platform-v1/**
+      - .github/workflows/marketplace-package.yml
+  push:
+    branches:
+      - main
+    paths:
+      - marketplace/byol-tfe-platform-v1/**
+      - .github/workflows/marketplace-package.yml
+  workflow_dispatch:
+    inputs:
+      run_buildbundle:
+        description: Run CPA verify and cpa buildbundle against the configured publisher ACR
+        required: false
+        type: boolean
+        default: false
+      force_bundle:
+        description: Pass --force to cpa buildbundle
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  MARKETPLACE_PACKAGE_DIR: ${{ github.workspace }}/marketplace/byol-tfe-platform-v1
+
+jobs:
+  verify:
+    name: Verify Marketplace Package
+    runs-on: ubuntu-latest
+    outputs:
+      bundle_version: ${{ steps.package_meta.outputs.bundle_version }}
+      registry_server: ${{ steps.package_meta.outputs.registry_server }}
+      registry_name: ${{ steps.package_meta.outputs.registry_name }}
+      registry_is_placeholder: ${{ steps.package_meta.outputs.registry_is_placeholder }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Derive package metadata from manifest
+        id: package_meta
+        run: |
+          set -euo pipefail
+
+          manifest="$MARKETPLACE_PACKAGE_DIR/manifest.yaml"
+
+          bundle_version="$(awk '
+            index($0, "version:") == 1 {
+              value = substr($0, index($0, ":") + 1)
+              sub(/[[:space:]]+#.*$/, "", value)
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+              gsub(/^"|"$/, "", value)
+              print value
+              exit
+            }
+          ' "$manifest")"
+
+          registry_server="$(awk '
+            index($0, "registryServer:") == 1 {
+              value = substr($0, index($0, ":") + 1)
+              sub(/[[:space:]]+#.*$/, "", value)
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+              gsub(/^"|"$/, "", value)
+              print value
+              exit
+            }
+          ' "$manifest")"
+
+          if [[ -z "$bundle_version" || -z "$registry_server" ]]; then
+            echo "Failed to derive required package metadata from $manifest" >&2
+            exit 1
+          fi
+
+          registry_name="${registry_server%%.*}"
+          registry_is_placeholder=false
+
+          if [[ "$registry_server" == "youracr.azurecr.io" ]]; then
+            registry_is_placeholder=true
+          fi
+
+          {
+            echo "bundle_version=$bundle_version"
+            echo "registry_server=$registry_server"
+            echo "registry_name=$registry_name"
+            echo "registry_is_placeholder=$registry_is_placeholder"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Make packaging scripts executable
+        run: chmod +x "$MARKETPLACE_PACKAGE_DIR"/scripts/*.sh
+
+      - name: Run Marketplace preflight verify
+        env:
+          REGISTRY_NAME: ${{ steps.package_meta.outputs.registry_name }}
+          REGISTRY_SERVER: ${{ steps.package_meta.outputs.registry_server }}
+          BUNDLE_VERSION: ${{ steps.package_meta.outputs.bundle_version }}
+        run: "$MARKETPLACE_PACKAGE_DIR/scripts/verify.sh"
+
+  buildbundle:
+    name: Build Marketplace Bundle
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && inputs.run_buildbundle
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      REGISTRY_NAME: ${{ needs.verify.outputs.registry_name }}
+      REGISTRY_SERVER: ${{ needs.verify.outputs.registry_server }}
+      BUNDLE_VERSION: ${{ needs.verify.outputs.bundle_version }}
+      FORCE_BUNDLE: ${{ inputs.force_bundle }}
+      AZURE_CLIENT_ID: ${{ secrets['AZURE_CLIENT_ID'] }}
+      AZURE_TENANT_ID: ${{ secrets['AZURE_TENANT_ID'] }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets['AZURE_SUBSCRIPTION_ID'] }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Require configured publisher registry
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ needs.verify.outputs.registry_is_placeholder }}" == "true" ]]; then
+            echo "manifest.yaml still uses the placeholder registryServer value. Update the package before running buildbundle." >&2
+            exit 1
+          fi
+
+      - name: Require Azure workload identity variables
+        run: |
+          set -euo pipefail
+
+          missing=()
+          for var_name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID; do
+            if [[ -z "${!var_name:-}" ]]; then
+              missing+=("$var_name")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "Missing GitHub secrets: ${missing[*]}" >&2
+            echo "Configure the Azure OIDC login identifiers before running buildbundle." >&2
+            exit 1
+          fi
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to publisher ACR
+        run: az acr login -n "$REGISTRY_NAME"
+
+      - name: Make packaging scripts executable
+        run: chmod +x "$MARKETPLACE_PACKAGE_DIR"/scripts/*.sh
+
+      - name: Run CPA verify
+        run: |
+          "$MARKETPLACE_PACKAGE_DIR/scripts/verify.sh" --with-cpa
+
+      - name: Build and push CNAB bundle
+        run: |
+          set -euo pipefail
+
+          if [[ "$FORCE_BUNDLE" == "true" ]]; then
+            "$MARKETPLACE_PACKAGE_DIR/scripts/build-bundle.sh" --force
+          else
+            "$MARKETPLACE_PACKAGE_DIR/scripts/build-bundle.sh"
+          fi

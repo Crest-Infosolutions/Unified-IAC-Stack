@@ -1,0 +1,349 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "config": {
+      "basics": {
+        "resourceGroup": {
+          "allowExisting": true
+        }
+      }
+    },
+    "basics": [],
+    "steps": [
+      {
+        "name": "clusterDetails",
+        "label": "Cluster Details",
+        "elements": [
+          {
+            "name": "clusterLookupControl",
+            "type": "Microsoft.Solutions.ArmApiControl",
+            "request": {
+              "method": "GET",
+              "path": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name, '/providers/Microsoft.ContainerService/managedClusters?api-version=2025-05-01')]"
+            }
+          },
+          {
+            "name": "clusterResourceName",
+            "type": "Microsoft.Common.DropDown",
+            "label": "AKS cluster",
+            "toolTip": "Select the existing AKS cluster that will host the BYOL Terraform Enterprise platform.",
+            "constraints": {
+              "allowedValues": "[map(steps('clusterDetails').clusterLookupControl.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]",
+              "required": true
+            }
+          }
+        ]
+      },
+      {
+        "name": "platformDetails",
+        "label": "Platform Details",
+        "elements": [
+          {
+            "name": "extensionResourceName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Cluster extension resource name",
+            "defaultValue": "tfeplatform",
+            "toolTip": "Lowercase alphanumeric characters and hyphens only.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9-]{6,30}$",
+              "validationMessage": "Use 6-30 lowercase alphanumeric characters or hyphens."
+            }
+          },
+          {
+            "name": "namespace",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Namespace",
+            "defaultValue": "tfeplatform",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9-]{3,63}$",
+              "validationMessage": "Use a valid Kubernetes namespace name."
+            }
+          },
+          {
+            "name": "platformHostname",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Terraform Enterprise hostname",
+            "toolTip": "Fully qualified hostname used by Terraform Enterprise.",
+            "defaultValue": "tfe.example.corp",
+            "constraints": {
+              "required": true,
+              "regex": "^[A-Za-z0-9.-]+$",
+              "validationMessage": "Use a valid hostname."
+            }
+          },
+          {
+            "name": "serviceInternalLoadBalancer",
+            "type": "Microsoft.Common.CheckBox",
+            "label": "Use an internal Azure load balancer",
+            "defaultValue": false
+          },
+          {
+            "name": "tfeStorageSizeGi",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Terraform Enterprise storage size",
+            "defaultValue": "20Gi",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9]+Gi$",
+              "validationMessage": "Use the form 20Gi."
+            }
+          },
+          {
+            "name": "keyVaultUrl",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure Key Vault URL",
+            "defaultValue": "https://example-keyvault.vault.azure.net",
+            "constraints": {
+              "required": true,
+              "regex": "^https://[A-Za-z0-9-]+\\.vault\\.azure\\.net/?$",
+              "validationMessage": "Use a valid Azure Key Vault URL."
+            }
+          },
+          {
+            "name": "keyVaultClientId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Key Vault workload identity client ID",
+            "defaultValue": "00000000-0000-0000-0000-000000000000",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-fA-F-]{36}$",
+              "validationMessage": "Use a valid GUID."
+            }
+          },
+          {
+            "name": "keyVaultTenantId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Key Vault tenant ID",
+            "defaultValue": "00000000-0000-0000-0000-000000000000",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-fA-F-]{36}$",
+              "validationMessage": "Use a valid GUID."
+            }
+          },
+          {
+            "name": "armClientId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "TFE agent workload identity client ID",
+            "defaultValue": "00000000-0000-0000-0000-000000000000",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-fA-F-]{36}$",
+              "validationMessage": "Use a valid GUID."
+            }
+          },
+          {
+            "name": "armTenantId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure tenant ID",
+            "defaultValue": "00000000-0000-0000-0000-000000000000",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-fA-F-]{36}$",
+              "validationMessage": "Use a valid GUID."
+            }
+          },
+          {
+            "name": "armSubscriptionId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure subscription ID",
+            "defaultValue": "00000000-0000-0000-0000-000000000000",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-fA-F-]{36}$",
+              "validationMessage": "Use a valid GUID."
+            }
+          },
+          {
+            "name": "databaseHost",
+            "type": "Microsoft.Common.TextBox",
+            "label": "PostgreSQL host",
+            "defaultValue": "postgres.example.corp:5432",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "databaseName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "PostgreSQL database name",
+            "defaultValue": "tfe",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "databaseUser",
+            "type": "Microsoft.Common.TextBox",
+            "label": "PostgreSQL username",
+            "defaultValue": "tfe",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "databaseParameters",
+            "type": "Microsoft.Common.TextBox",
+            "label": "PostgreSQL parameters",
+            "defaultValue": "sslmode=require",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "redisUrl",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Redis URL",
+            "defaultValue": "redis://redis.example.corp:6379",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "objectStorageAccountName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure storage account name",
+            "defaultValue": "exampleaccount",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9]{3,24}$",
+              "validationMessage": "Use a valid Azure storage account name."
+            }
+          },
+          {
+            "name": "objectStorageContainer",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure storage container",
+            "defaultValue": "tfestate",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9-]{3,63}$",
+              "validationMessage": "Use a valid Azure Blob container name."
+            }
+          },
+          {
+            "name": "agentLogLevel",
+            "type": "Microsoft.Common.DropDown",
+            "label": "TFE agent log level",
+            "defaultValue": "info",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "trace",
+                  "value": "trace"
+                },
+                {
+                  "label": "debug",
+                  "value": "debug"
+                },
+                {
+                  "label": "info",
+                  "value": "info"
+                },
+                {
+                  "label": "warn",
+                  "value": "warn"
+                },
+                {
+                  "label": "error",
+                  "value": "error"
+                }
+              ],
+              "required": true
+            }
+          },
+          {
+            "name": "vaultEnabled",
+            "type": "Microsoft.Common.CheckBox",
+            "label": "Enable external Vault integration",
+            "defaultValue": false
+          },
+          {
+            "name": "vaultAddress",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Vault address",
+            "defaultValue": "https://vault.example.corp:8200",
+            "visible": "[steps('platformDetails').vaultEnabled]",
+            "constraints": {
+              "required": true,
+              "regex": "^https://[^\\s]+$",
+              "validationMessage": "Use a valid HTTPS Vault URL."
+            }
+          },
+          {
+            "name": "vaultClusterAddress",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Vault cluster address",
+            "defaultValue": "https://vault.example.corp:8201",
+            "visible": "[steps('platformDetails').vaultEnabled]",
+            "constraints": {
+              "required": true,
+              "regex": "^https://[^\\s]+$",
+              "validationMessage": "Use a valid HTTPS Vault cluster URL."
+            }
+          },
+          {
+            "name": "vaultAuthMethod",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Vault auth method",
+            "defaultValue": "kubernetes",
+            "visible": "[steps('platformDetails').vaultEnabled]",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "kubernetes",
+                  "value": "kubernetes"
+                }
+              ],
+              "required": true
+            }
+          },
+          {
+            "name": "vaultRole",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Vault role",
+            "defaultValue": "tfe-agent",
+            "visible": "[steps('platformDetails').vaultEnabled]",
+            "constraints": {
+              "required": true,
+              "regex": "^[A-Za-z0-9._-]+$",
+              "validationMessage": "Use a valid Vault role name."
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "clusterResourceName": "[steps('clusterDetails').clusterResourceName]",
+      "extensionResourceName": "[steps('platformDetails').extensionResourceName]",
+      "namespace": "[steps('platformDetails').namespace]",
+      "platformHostname": "[steps('platformDetails').platformHostname]",
+      "serviceInternalLoadBalancer": "[steps('platformDetails').serviceInternalLoadBalancer]",
+      "tfeStorageSizeGi": "[steps('platformDetails').tfeStorageSizeGi]",
+      "keyVaultUrl": "[steps('platformDetails').keyVaultUrl]",
+      "keyVaultClientId": "[steps('platformDetails').keyVaultClientId]",
+      "keyVaultTenantId": "[steps('platformDetails').keyVaultTenantId]",
+      "armClientId": "[steps('platformDetails').armClientId]",
+      "armTenantId": "[steps('platformDetails').armTenantId]",
+      "armSubscriptionId": "[steps('platformDetails').armSubscriptionId]",
+      "databaseHost": "[steps('platformDetails').databaseHost]",
+      "databaseName": "[steps('platformDetails').databaseName]",
+      "databaseUser": "[steps('platformDetails').databaseUser]",
+      "databaseParameters": "[steps('platformDetails').databaseParameters]",
+      "redisUrl": "[steps('platformDetails').redisUrl]",
+      "objectStorageAccountName": "[steps('platformDetails').objectStorageAccountName]",
+      "objectStorageContainer": "[steps('platformDetails').objectStorageContainer]",
+      "agentLogLevel": "[steps('platformDetails').agentLogLevel]",
+      "vaultEnabled": "[steps('platformDetails').vaultEnabled]",
+      "vaultAddress": "[steps('platformDetails').vaultAddress]",
+      "vaultClusterAddress": "[steps('platformDetails').vaultClusterAddress]",
+      "vaultAuthMethod": "[steps('platformDetails').vaultAuthMethod]",
+      "vaultRole": "[steps('platformDetails').vaultRole]"
+    }
+  }
+}

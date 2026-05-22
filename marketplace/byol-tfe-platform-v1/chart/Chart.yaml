@@ -1,0 +1,6 @@
+apiVersion: v2
+name: byol-tfe-platform
+description: BYOL Terraform Enterprise platform for AKS Marketplace packaging
+type: application
+version: 0.1.0
+appVersion: "v202501-1"

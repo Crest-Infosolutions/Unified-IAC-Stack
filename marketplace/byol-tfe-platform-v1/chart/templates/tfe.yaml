@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tfe
+  namespace: {{ include "byol-tfe-platform.namespace" . }}
+  labels:
+    {{- include "byol-tfe-platform.labels" . | nindent 4 }}
+    {{- include "byol-tfe-platform.tfeSelectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.tfeReplicaCount }}
+  selector:
+    matchLabels:
+      {{- include "byol-tfe-platform.tfeSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "byol-tfe-platform.tfeSelectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: tfe
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: {{ .Values.kubernetesPullSecretName }}
+      securityContext:
+        runAsUser: 0
+        runAsNonRoot: false
+      initContainers:
+        - name: tfe-init
+          image: {{ include "byol-tfe-platform.image" .Values.global.azure.images.tlsInit }}
+          command:
+            - sh
+            - -c
+            - |
+              cp /tls-src/tls.crt /tls-dst/cert.pem && \
+              cp /tls-src/tls.crt /tls-dst/bundle.pem && \
+              cp /tls-src/tls.key /tls-dst/key.pem && \
+              chmod 644 /tls-dst/cert.pem /tls-dst/bundle.pem /tls-dst/key.pem
+          volumeMounts:
+            - mountPath: /tls-src
+              name: tfe-tls-src
+              readOnly: true
+            - mountPath: /tls-dst
+              name: tfe-tls-writable
+      containers:
+        - name: tfe
+          image: {{ include "byol-tfe-platform.image" .Values.global.azure.images.tfe }}
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: true
+            capabilities:
+              add:
+                - NET_BIND_SERVICE
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+          envFrom:
+            - configMapRef:
+                name: tfe-config
+            - secretRef:
+                name: {{ .Values.kubernetesTfeSecretName }}
+          ports:
+            - containerPort: 8443
+              name: https
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - mountPath: /var/lib/terraform-enterprise
+              name: tfe-storage
+            - mountPath: /etc/ssl/private/terraform-enterprise
+              name: tfe-tls-writable
+          readinessProbe:
+            httpGet:
+              path: /_health_check
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            failureThreshold: 40
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.tfeResources | nindent 12 }}
+      volumes:
+        - name: tfe-storage
+          persistentVolumeClaim:
+            claimName: tfe-pvc
+        - name: tfe-tls-src
+          secret:
+            secretName: {{ .Values.kubernetesTlsSecretName }}
+        - name: tfe-tls-writable
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tfe
+  namespace: {{ include "byol-tfe-platform.namespace" . }}
+  labels:
+    {{- include "byol-tfe-platform.labels" . | nindent 4 }}
+  {{- if or (eq .Values.serviceType "LoadBalancer") .Values.serviceInternalLoadBalancer }}
+  annotations:
+    {{- if .Values.serviceInternalLoadBalancer }}
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.serviceType }}
+  selector:
+    {{- include "byol-tfe-platform.tfeSelectorLabels" . | nindent 4 }}
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+    - name: http
+      port: 80
+      targetPort: 8080

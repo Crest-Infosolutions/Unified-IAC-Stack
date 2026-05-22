@@ -1,0 +1,8 @@
+{{- if .Values.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "byol-tfe-platform.namespace" . }}
+  labels:
+    {{- include "byol-tfe-platform.labels" . | nindent 4 }}
+{{- end }}

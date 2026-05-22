@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tfe-agent
+  namespace: {{ include "byol-tfe-platform.namespace" . }}
+  labels:
+    {{- include "byol-tfe-platform.labels" . | nindent 4 }}
+    {{- include "byol-tfe-platform.agentSelectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.agentReplicaCount }}
+  selector:
+    matchLabels:
+      {{- include "byol-tfe-platform.agentSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "byol-tfe-platform.agentSelectorLabels" . | nindent 8 }}
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: tfe-agent
+      automountServiceAccountToken: true
+      containers:
+        - name: tfe-agent
+          image: {{ include "byol-tfe-platform.image" .Values.global.azure.images.tfeAgent }}
+          imagePullPolicy: {{ .Values.agentImagePullPolicy }}
+          env:
+            - name: ARM_OIDC_TOKEN_FILE
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+            - name: ARM_OIDC_TOKEN_FILE_PATH
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - configMapRef:
+                name: tfe-agent-config
+            - secretRef:
+                name: {{ .Values.kubernetesTfeAgentSecretName }}
+          resources:
+            {{- toYaml .Values.agentResources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonRoot: false
+            runAsUser: 0
+      restartPolicy: Always

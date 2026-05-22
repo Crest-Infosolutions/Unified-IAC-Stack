@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tfe-pvc
+  namespace: {{ include "byol-tfe-platform.namespace" . }}
+  labels:
+    {{- include "byol-tfe-platform.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.tfeStorageSizeGi | quote }}
+  {{- if .Values.tfeStorageClassName }}
+  storageClassName: {{ .Values.tfeStorageClassName | quote }}
+  {{- end }}

@@ -1,0 +1,366 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "namespace",
+    "platformHostname",
+    "serviceType",
+    "serviceInternalLoadBalancer",
+    "tfeStorageSizeGi",
+    "tfeStorageClassName",
+    "keyVaultUrl",
+    "keyVaultClientId",
+    "keyVaultTenantId",
+    "externalSecretsRefreshInterval",
+    "armClientId",
+    "armTenantId",
+    "armSubscriptionId",
+    "databaseHost",
+    "databaseName",
+    "databaseUser",
+    "databaseParameters",
+    "redisUrl",
+    "objectStorageAccountName",
+    "objectStorageContainer",
+    "agentLogLevel",
+    "agentImagePullPolicy",
+    "vaultEnabled",
+    "vaultAuthMethod",
+    "vaultRole",
+    "tfeReplicaCount",
+    "agentReplicaCount",
+    "kubernetesPullSecretName",
+    "kubernetesTfeSecretName",
+    "kubernetesTfeAgentSecretName",
+    "kubernetesTlsSecretName",
+    "keyVaultTfeSecretName",
+    "keyVaultTfeAgentSecretName",
+    "keyVaultTlsCrtSecretName",
+    "keyVaultTlsKeySecretName",
+    "keyVaultPullSecretName",
+    "global"
+  ],
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+      "minLength": 3,
+      "maxLength": 63
+    },
+    "createNamespace": {
+      "type": "boolean"
+    },
+    "platformHostname": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$"
+    },
+    "serviceType": {
+      "type": "string",
+      "enum": [
+        "LoadBalancer"
+      ]
+    },
+    "serviceInternalLoadBalancer": {
+      "type": "boolean"
+    },
+    "tfeStorageSizeGi": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*Gi$"
+    },
+    "tfeStorageClassName": {
+      "type": "string",
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[A-Za-z0-9]([-.A-Za-z0-9]*[A-Za-z0-9])?$"
+        }
+      ]
+    },
+    "keyVaultUrl": {
+      "type": "string",
+      "pattern": "^https://[A-Za-z0-9-]+\\.vault\\.azure\\.net/?$"
+    },
+    "keyVaultClientId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}$"
+    },
+    "keyVaultTenantId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}$"
+    },
+    "externalSecretsRefreshInterval": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*[smh]$"
+    },
+    "armClientId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}$"
+    },
+    "armTenantId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}$"
+    },
+    "armSubscriptionId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F-]{36}$"
+    },
+    "armUseOidc": {
+      "type": "boolean"
+    },
+    "armUseCli": {
+      "type": "boolean"
+    },
+    "databaseHost": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9.-]+:[0-9]{1,5}$"
+    },
+    "databaseName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "databaseUser": {
+      "type": "string",
+      "minLength": 1
+    },
+    "databaseParameters": {
+      "type": "string",
+      "minLength": 1
+    },
+    "redisUrl": {
+      "type": "string",
+      "pattern": "^rediss?://[^\\s]+$"
+    },
+    "objectStorageAccountName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{3,24}$"
+    },
+    "objectStorageContainer": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$"
+    },
+    "agentTfcAddress": {
+      "type": "string"
+    },
+    "agentLogLevel": {
+      "type": "string",
+      "enum": [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error"
+      ]
+    },
+    "agentImagePullPolicy": {
+      "type": "string",
+      "enum": [
+        "IfNotPresent"
+      ]
+    },
+    "vaultEnabled": {
+      "type": "boolean"
+    },
+    "vaultAddress": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "vaultClusterAddress": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "vaultAuthMethod": {
+      "type": "string",
+      "enum": [
+        "kubernetes"
+      ]
+    },
+    "vaultRole": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tfeVaultDisableMlock": {
+      "type": "boolean"
+    },
+    "tfeReplicaCount": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "agentReplicaCount": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "kubernetesPullSecretName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+    },
+    "kubernetesTfeSecretName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+    },
+    "kubernetesTfeAgentSecretName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+    },
+    "kubernetesTlsSecretName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+    },
+    "keyVaultTfeSecretName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "keyVaultTfeAgentSecretName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "keyVaultTlsCrtSecretName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "keyVaultTlsKeySecretName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "keyVaultPullSecretName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tfeResources": {
+      "type": "object"
+    },
+    "agentResources": {
+      "type": "object"
+    },
+    "global": {
+      "type": "object",
+      "required": [
+        "azure"
+      ],
+      "properties": {
+        "azure": {
+          "type": "object",
+          "required": [
+            "images"
+          ],
+          "properties": {
+            "images": {
+              "type": "object",
+              "required": [
+                "tfe",
+                "tfeAgent",
+                "tlsInit"
+              ],
+              "properties": {
+                "tfe": {
+                  "type": "object",
+                  "required": [
+                    "repository",
+                    "tag",
+                    "digest"
+                  ],
+                  "properties": {
+                    "repository": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "tag": {
+                      "type": "string",
+                      "minLength": 1,
+                      "not": {
+                        "const": "latest"
+                      }
+                    },
+                    "digest": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tfeAgent": {
+                  "type": "object",
+                  "required": [
+                    "repository",
+                    "tag",
+                    "digest"
+                  ],
+                  "properties": {
+                    "repository": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "tag": {
+                      "type": "string",
+                      "minLength": 1,
+                      "not": {
+                        "const": "latest"
+                      }
+                    },
+                    "digest": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tlsInit": {
+                  "type": "object",
+                  "required": [
+                    "repository",
+                    "tag",
+                    "digest"
+                  ],
+                  "properties": {
+                    "repository": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "tag": {
+                      "type": "string",
+                      "minLength": 1,
+                      "not": {
+                        "const": "latest"
+                      }
+                    },
+                    "digest": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "vaultEnabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "vaultAddress",
+          "vaultClusterAddress",
+          "vaultAuthMethod",
+          "vaultRole"
+        ],
+        "properties": {
+          "vaultAddress": {
+            "minLength": 1
+          },
+          "vaultClusterAddress": {
+            "minLength": 1
+          }
+        }
+      }
+    }
+  ]
+}

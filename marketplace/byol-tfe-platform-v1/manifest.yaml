@@ -1,0 +1,11 @@
+applicationName: com.crestinfosolutions.byoltfeplatform
+publisher: "Crest Infosolutions"
+description: "BYOL Terraform Enterprise platform for AKS with Azure Key Vault-backed secret delivery."
+version: 0.1.0
+helmChart: "./chart"
+clusterArmTemplate: "./mainTemplate.json"
+uiDefinition: "./createUiDefinition.json"
+registryServer: "crest.azurecr.io"
+extensionRegistrationParameters:
+  defaultScope: cluster
+  namespace: "tfeplatform"

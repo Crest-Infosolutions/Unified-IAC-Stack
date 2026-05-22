@@ -71,14 +71,17 @@ global:
   azure:
     images:
       tfe:
-        repository: images.releases.hashicorp.com/hashicorp/terraform-enterprise
+        registry: images.releases.hashicorp.com/hashicorp
+        image: terraform-enterprise
         tag: v202501-1
         digest: ""
       tfeAgent:
-        repository: hashicorp/tfc-agent
+        registry: docker.io/hashicorp
+        image: tfc-agent
         tag: 1.28.10
         digest: ""
       tlsInit:
-        repository: busybox
+        registry: docker.io/library
+        image: busybox
         tag: 1.37.0
         digest: ""

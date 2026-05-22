@@ -35,10 +35,17 @@ app.kubernetes.io/component: tfe-agent
 
 {{- define "byol-tfe-platform.image" -}}
 {{- $image := . -}}
+{{- $repository := $image.image -}}
+{{- if not $repository -}}
+{{- $repository = $image.repository -}}
+{{- end -}}
+{{- if $image.registry -}}
+{{- $repository = printf "%s/%s" $image.registry $repository -}}
+{{- end -}}
 {{- if $image.digest -}}
-{{- printf "%s@%s" $image.repository $image.digest -}}
+{{- printf "%s@%s" $repository $image.digest -}}
 {{- else -}}
-{{- printf "%s:%s" $image.repository $image.tag -}}
+{{- printf "%s:%s" $repository $image.tag -}}
 {{- end -}}
 {{- end -}}
 

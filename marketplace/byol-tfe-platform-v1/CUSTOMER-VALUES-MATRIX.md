@@ -86,13 +86,16 @@ Column definitions:
 
 | Value name | Description | Required | Example | Source of truth | Flow |
 | --- | --- | --- | --- | --- | --- |
-| `global.azure.images.tfe.repository` | Terraform Enterprise image repository | Yes (defaulted) | `images.releases.hashicorp.com/hashicorp/terraform-enterprise` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfe.registry` | Terraform Enterprise image registry path | Yes (defaulted) | `images.releases.hashicorp.com/hashicorp` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfe.image` | Terraform Enterprise image name | Yes (defaulted) | `terraform-enterprise` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfe.tag` | Terraform Enterprise image tag | Yes (defaulted) | `v202501-1` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfe.digest` | Terraform Enterprise image digest override | Optional | `` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfeAgent.repository` | Terraform Enterprise agent image repository | Yes (defaulted) | `hashicorp/tfc-agent` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfeAgent.registry` | Terraform Enterprise agent image registry path | Yes (defaulted) | `docker.io/hashicorp` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfeAgent.image` | Terraform Enterprise agent image name | Yes (defaulted) | `tfc-agent` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfeAgent.tag` | Terraform Enterprise agent image tag | Yes (defaulted) | `1.28.10` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfeAgent.digest` | Terraform Enterprise agent image digest override | Optional | `` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tlsInit.repository` | TLS init container image repository | Yes (defaulted) | `busybox` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tlsInit.registry` | TLS init container image registry path | Yes (defaulted) | `docker.io/library` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tlsInit.image` | TLS init container image name | Yes (defaulted) | `busybox` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tlsInit.tag` | TLS init container image tag | Yes (defaulted) | `1.37.0` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tlsInit.digest` | TLS init container image digest override | Optional | `` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 

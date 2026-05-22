@@ -260,12 +260,17 @@
                 "tfe": {
                   "type": "object",
                   "required": [
-                    "repository",
+                    "registry",
+                    "image",
                     "tag",
                     "digest"
                   ],
                   "properties": {
-                    "repository": {
+                    "registry": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "image": {
                       "type": "string",
                       "minLength": 1
                     },
@@ -284,12 +289,17 @@
                 "tfeAgent": {
                   "type": "object",
                   "required": [
-                    "repository",
+                    "registry",
+                    "image",
                     "tag",
                     "digest"
                   ],
                   "properties": {
-                    "repository": {
+                    "registry": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "image": {
                       "type": "string",
                       "minLength": 1
                     },
@@ -308,12 +318,17 @@
                 "tlsInit": {
                   "type": "object",
                   "required": [
-                    "repository",
+                    "registry",
+                    "image",
                     "tag",
                     "digest"
                   ],
                   "properties": {
-                    "repository": {
+                    "registry": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "image": {
                       "type": "string",
                       "minLength": 1
                     },

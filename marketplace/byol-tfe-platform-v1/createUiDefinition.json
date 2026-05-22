@@ -56,6 +56,7 @@
             "name": "namespace",
             "type": "Microsoft.Common.TextBox",
             "label": "Namespace",
+            "toolTip": "Kubernetes namespace where the Marketplace extension installs Terraform Enterprise resources.",
             "defaultValue": "tfeplatform",
             "constraints": {
               "required": true,
@@ -71,7 +72,7 @@
             "defaultValue": "tfe.example.corp",
             "constraints": {
               "required": true,
-              "regex": "^[A-Za-z0-9.-]+$",
+              "regex": "^(?=.{1,253}$)[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$",
               "validationMessage": "Use a valid hostname."
             }
           },
@@ -79,16 +80,18 @@
             "name": "serviceInternalLoadBalancer",
             "type": "Microsoft.Common.CheckBox",
             "label": "Use an internal Azure load balancer",
+            "toolTip": "Enable this when the Terraform Enterprise service should be reachable only from inside the virtual network.",
             "defaultValue": false
           },
           {
             "name": "tfeStorageSizeGi",
             "type": "Microsoft.Common.TextBox",
             "label": "Terraform Enterprise storage size",
+            "toolTip": "Persistent volume size for Terraform Enterprise data, specified in gibibytes.",
             "defaultValue": "20Gi",
             "constraints": {
               "required": true,
-              "regex": "^[0-9]+Gi$",
+              "regex": "^(?=.{3,10}$)[1-9][0-9]*Gi$",
               "validationMessage": "Use the form 20Gi."
             }
           },
@@ -96,10 +99,11 @@
             "name": "keyVaultUrl",
             "type": "Microsoft.Common.TextBox",
             "label": "Azure Key Vault URL",
+            "toolTip": "HTTPS endpoint of the Azure Key Vault that stores Terraform Enterprise secrets.",
             "defaultValue": "https://example-keyvault.vault.azure.net",
             "constraints": {
               "required": true,
-              "regex": "^https://[A-Za-z0-9-]+\\.vault\\.azure\\.net/?$",
+              "regex": "^(?=.{1,255}$)https://[A-Za-z0-9-]+\\.vault\\.azure\\.net/?$",
               "validationMessage": "Use a valid Azure Key Vault URL."
             }
           },
@@ -107,6 +111,7 @@
             "name": "keyVaultClientId",
             "type": "Microsoft.Common.TextBox",
             "label": "Key Vault workload identity client ID",
+            "toolTip": "Client ID of the user-assigned managed identity used to read secrets from Azure Key Vault.",
             "defaultValue": "00000000-0000-0000-0000-000000000000",
             "constraints": {
               "required": true,
@@ -118,6 +123,7 @@
             "name": "keyVaultTenantId",
             "type": "Microsoft.Common.TextBox",
             "label": "Key Vault tenant ID",
+            "toolTip": "Microsoft Entra tenant ID that owns the Azure Key Vault identity.",
             "defaultValue": "00000000-0000-0000-0000-000000000000",
             "constraints": {
               "required": true,
@@ -129,6 +135,7 @@
             "name": "armClientId",
             "type": "Microsoft.Common.TextBox",
             "label": "TFE agent workload identity client ID",
+            "toolTip": "Client ID of the managed identity that the Terraform Enterprise agent uses for Azure operations.",
             "defaultValue": "00000000-0000-0000-0000-000000000000",
             "constraints": {
               "required": true,
@@ -140,6 +147,7 @@
             "name": "armTenantId",
             "type": "Microsoft.Common.TextBox",
             "label": "Azure tenant ID",
+            "toolTip": "Microsoft Entra tenant ID that Terraform Enterprise uses when authenticating to Azure.",
             "defaultValue": "00000000-0000-0000-0000-000000000000",
             "constraints": {
               "required": true,
@@ -151,6 +159,7 @@
             "name": "armSubscriptionId",
             "type": "Microsoft.Common.TextBox",
             "label": "Azure subscription ID",
+            "toolTip": "Subscription ID that the Terraform Enterprise agent targets for Azure provisioning.",
             "defaultValue": "00000000-0000-0000-0000-000000000000",
             "constraints": {
               "required": true,
@@ -162,51 +171,67 @@
             "name": "databaseHost",
             "type": "Microsoft.Common.TextBox",
             "label": "PostgreSQL host",
+            "toolTip": "Hostname and port for the external PostgreSQL server, for example postgres.example.corp:5432.",
             "defaultValue": "postgres.example.corp:5432",
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^(?=.{1,255}$)[A-Za-z0-9.-]+:[0-9]{1,5}$",
+              "validationMessage": "Use the form hostname:port."
             }
           },
           {
             "name": "databaseName",
             "type": "Microsoft.Common.TextBox",
             "label": "PostgreSQL database name",
+            "toolTip": "Database name that Terraform Enterprise uses inside the external PostgreSQL server.",
             "defaultValue": "tfe",
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^(?=.{1,63}$)[A-Za-z_][A-Za-z0-9_]*$",
+              "validationMessage": "Use a valid PostgreSQL database identifier."
             }
           },
           {
             "name": "databaseUser",
             "type": "Microsoft.Common.TextBox",
             "label": "PostgreSQL username",
+            "toolTip": "Database user that Terraform Enterprise uses to connect to PostgreSQL.",
             "defaultValue": "tfe",
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^(?=.{1,63}$)[A-Za-z_][A-Za-z0-9_]*$",
+              "validationMessage": "Use a valid PostgreSQL username."
             }
           },
           {
             "name": "databaseParameters",
             "type": "Microsoft.Common.TextBox",
             "label": "PostgreSQL parameters",
+            "toolTip": "Additional PostgreSQL connection parameters appended to the connection string.",
             "defaultValue": "sslmode=require",
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^(?=.{1,256}$).+$",
+              "validationMessage": "Provide one or more PostgreSQL connection parameters."
             }
           },
           {
             "name": "redisUrl",
             "type": "Microsoft.Common.TextBox",
             "label": "Redis URL",
+            "toolTip": "Redis connection URL, including the scheme and port, used by Terraform Enterprise.",
             "defaultValue": "redis://redis.example.corp:6379",
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^(?=.{1,255}$)rediss?://[^\\s]+$",
+              "validationMessage": "Use a valid Redis URL."
             }
           },
           {
             "name": "objectStorageAccountName",
             "type": "Microsoft.Common.TextBox",
             "label": "Azure storage account name",
+            "toolTip": "Storage account that Terraform Enterprise uses for object storage-backed services.",
             "defaultValue": "exampleaccount",
             "constraints": {
               "required": true,
@@ -218,6 +243,7 @@
             "name": "objectStorageContainer",
             "type": "Microsoft.Common.TextBox",
             "label": "Azure storage container",
+            "toolTip": "Blob container within the storage account used by Terraform Enterprise.",
             "defaultValue": "tfestate",
             "constraints": {
               "required": true,
@@ -229,6 +255,7 @@
             "name": "agentLogLevel",
             "type": "Microsoft.Common.DropDown",
             "label": "TFE agent log level",
+            "toolTip": "Verbosity level for the Terraform Enterprise agent logs.",
             "defaultValue": "info",
             "constraints": {
               "allowedValues": [
@@ -260,17 +287,19 @@
             "name": "vaultEnabled",
             "type": "Microsoft.Common.CheckBox",
             "label": "Enable external Vault integration",
+            "toolTip": "Enable this to source runtime secrets from an external HashiCorp Vault deployment.",
             "defaultValue": false
           },
           {
             "name": "vaultAddress",
             "type": "Microsoft.Common.TextBox",
             "label": "Vault address",
+            "toolTip": "HTTPS address of the external Vault API endpoint.",
             "defaultValue": "https://vault.example.corp:8200",
             "visible": "[steps('platformDetails').vaultEnabled]",
             "constraints": {
               "required": true,
-              "regex": "^https://[^\\s]+$",
+              "regex": "^(?=.{1,255}$)https://[^\\s]+$",
               "validationMessage": "Use a valid HTTPS Vault URL."
             }
           },
@@ -278,11 +307,12 @@
             "name": "vaultClusterAddress",
             "type": "Microsoft.Common.TextBox",
             "label": "Vault cluster address",
+            "toolTip": "HTTPS address of the Vault cluster endpoint used for intra-cluster coordination.",
             "defaultValue": "https://vault.example.corp:8201",
             "visible": "[steps('platformDetails').vaultEnabled]",
             "constraints": {
               "required": true,
-              "regex": "^https://[^\\s]+$",
+              "regex": "^(?=.{1,255}$)https://[^\\s]+$",
               "validationMessage": "Use a valid HTTPS Vault cluster URL."
             }
           },
@@ -290,6 +320,7 @@
             "name": "vaultAuthMethod",
             "type": "Microsoft.Common.DropDown",
             "label": "Vault auth method",
+            "toolTip": "Authentication method the Terraform Enterprise agent uses when logging into Vault.",
             "defaultValue": "kubernetes",
             "visible": "[steps('platformDetails').vaultEnabled]",
             "constraints": {
@@ -306,11 +337,12 @@
             "name": "vaultRole",
             "type": "Microsoft.Common.TextBox",
             "label": "Vault role",
+            "toolTip": "Vault role bound to the Terraform Enterprise agent service account.",
             "defaultValue": "tfe-agent",
             "visible": "[steps('platformDetails').vaultEnabled]",
             "constraints": {
               "required": true,
-              "regex": "^[A-Za-z0-9._-]+$",
+              "regex": "^(?=.{1,128}$)[A-Za-z0-9._-]+$",
               "validationMessage": "Use a valid Vault role name."
             }
           }

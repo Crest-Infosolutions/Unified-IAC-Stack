@@ -120,6 +120,7 @@
       "apiVersion": "2024-11-01",
       "name": "[parameters('extensionResourceName')]",
       "scope": "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]",
+      "location": "[parameters('location')]",
       "properties": {
         "extensionType": "[variables('clusterExtensionTypeName')]",
         "autoUpgradeMinorVersion": true,

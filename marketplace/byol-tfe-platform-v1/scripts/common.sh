@@ -37,6 +37,42 @@ require_command() {
   fi
 }
 
+select_container_runtime() {
+  if command -v docker >/dev/null 2>&1; then
+    printf 'docker\n'
+    return
+  fi
+
+  if command -v podman >/dev/null 2>&1; then
+    printf 'podman\n'
+    return
+  fi
+
+  fail "Required container runtime not found: docker or podman"
+}
+
+detect_container_socket() {
+  if [[ -n "${CPA_CONTAINER_SOCKET:-}" && -S "${CPA_CONTAINER_SOCKET}" ]]; then
+    printf '%s\n' "$CPA_CONTAINER_SOCKET"
+    return
+  fi
+
+  if [[ -S /var/run/docker.sock ]]; then
+    printf '/var/run/docker.sock\n'
+    return
+  fi
+
+  if [[ -S /run/podman/podman.sock ]]; then
+    printf '/run/podman/podman.sock\n'
+    return
+  fi
+
+  if [[ -n "${XDG_RUNTIME_DIR:-}" && -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]]; then
+    printf '%s\n' "$XDG_RUNTIME_DIR/podman/podman.sock"
+    return
+  fi
+}
+
 require_env_vars() {
   local missing=()
   local var_name
@@ -267,28 +303,40 @@ run_cpa() {
   local cpa_subcommand="$1"
   shift
 
-  local docker_args=(
+  local container_runtime
+  local container_socket
+  local container_args=(
     --rm
     -e "REGISTRY_NAME=$REGISTRY_NAME"
-    -v /var/run/docker.sock:/var/run/docker.sock
     -v "$MARKETPLACE_PACKAGE_DIR:/data"
     -w /data
   )
 
-  require_command docker
+  container_runtime="$(select_container_runtime)"
+  container_socket="$(detect_container_socket || true)"
+
   assert_supported_cpa_host
 
+  if [[ -n "$container_socket" ]]; then
+    container_args+=(-v "$container_socket:/var/run/docker.sock")
+  elif [[ "$cpa_subcommand" == "buildbundle" ]]; then
+    warn "No Docker-compatible container socket detected. cpa buildbundle may fail without one."
+  fi
+
   if [[ -d "$HOME/.docker" ]]; then
-    docker_args+=(-v "$HOME/.docker:/root/.docker:ro")
+    container_args+=(-v "$HOME/.docker:/root/.docker:ro")
+  elif [[ -f "$HOME/.config/containers/auth.json" ]]; then
+    container_args+=(-v "$HOME/.config/containers/auth.json:/root/.docker/config.json:ro")
   fi
 
   if [[ -d "$HOME/.azure" ]]; then
-    docker_args+=(-v "$HOME/.azure:/root/.azure:ro")
+    container_args+=(-v "$HOME/.azure:/root/.azure:ro")
   fi
 
+  info "Using container runtime $container_runtime"
   info "Pulling CPA image $CPA_IMAGE"
-  docker pull "$CPA_IMAGE" >/dev/null
+  "$container_runtime" pull "$CPA_IMAGE" >/dev/null
 
   info "Running cpa $cpa_subcommand"
-  docker run "${docker_args[@]}" --entrypoint /bin/bash "$CPA_IMAGE" -lc "set -euo pipefail; cpa $cpa_subcommand $*"
+  "$container_runtime" run "${container_args[@]}" --entrypoint /bin/bash "$CPA_IMAGE" -lc "set -euo pipefail; cpa $cpa_subcommand $*"
 }

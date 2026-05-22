@@ -13,9 +13,9 @@ This directory documents the local and CI packaging flow for the BYOL TFE Platfo
 - `helm`
 - `jq`
 - `git`
-- `docker`
+- `docker` or `podman`
 - A publisher Azure Container Registry in the same Microsoft Entra tenant as Partner Center
-- Docker authentication to the publisher ACR before `build-bundle.sh`
+- Container runtime authentication to the publisher ACR before `build-bundle.sh`
 
 Microsoft documents CPA packaging support for Linux/Windows AMD64 hosts. Local preflight validation is shell-based and can run on macOS, but the CPA-backed steps should be executed on a supported host or Linux CI runner.
 
@@ -31,6 +31,7 @@ Copy `.env.example` to `.env` inside the package root and populate these values:
 Optional values:
 
 - `CPA_IMAGE`: defaults to `mcr.microsoft.com/container-package-app:latest`
+- `CPA_CONTAINER_SOCKET`: optional explicit Docker-compatible socket path to mount into the CPA container
 - `HELM_RELEASE_NAME`: defaults to `byol-tfe-platform`
 - `VALUES_FILE`: defaults to `examples/values.enterprise.example.yaml`
 - `ALLOW_UNSUPPORTED_HOST`: override for trying CPA steps on unsupported hosts
@@ -77,7 +78,7 @@ Credential requirements:
 
 ## Build The CNAB Bundle
 
-Authenticate Docker to your publisher ACR first, then run:
+Authenticate your selected container runtime to your publisher ACR first, then run:
 
 ```bash
 ./scripts/build-bundle.sh
@@ -89,7 +90,7 @@ To overwrite an existing bundle tag during dry-run packaging only:
 ./scripts/build-bundle.sh --force
 ```
 
-The build script pulls `mcr.microsoft.com/container-package-app:latest`, mounts the Marketplace package at `/data`, and runs `cpa buildbundle` inside the packaging container.
+The build script pulls `mcr.microsoft.com/container-package-app:latest`, mounts the Marketplace package at `/data`, and runs `cpa buildbundle` inside the packaging container using `docker` when available and `podman` otherwise.
 
 ## Required Azure Setup For Ingestion
 
@@ -115,4 +116,5 @@ az provider show -n Microsoft.PartnerCenterIngestion --subscription <subscriptio
 
 - `buildbundle` already runs verification internally, but the wrapper keeps the local preflight checks explicit and fail-fast.
 - The version bump check is best-effort. If the package is new and `manifest.yaml` is not in `HEAD` yet, the script skips that specific check and prints a warning.
+- CPA steps prefer `docker` when present and fall back to `podman`. If bundle build needs a Docker-compatible socket on a podman host, set `CPA_CONTAINER_SOCKET` explicitly.
 - Marketplace-prescribed `DONOTMODIFY` plan placeholders in `mainTemplate.json` are allowed and are not treated as blocking placeholders.

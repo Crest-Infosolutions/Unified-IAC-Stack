@@ -168,6 +168,11 @@ validate_manifest_version_bump() {
     return
   fi
 
+  if git -C "$repo_root" diff --quiet HEAD -- "$relative_manifest"; then
+    info "Skipping manifest version bump check because manifest.yaml matches HEAD."
+    return
+  fi
+
   head_version="$(git -C "$repo_root" show "HEAD:$relative_manifest" | awk '
     index($0, "version:") == 1 {
       value = substr($0, index($0, ":") + 1)

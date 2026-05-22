@@ -323,7 +323,12 @@ run_cpa() {
     warn "No Docker-compatible container socket detected. cpa buildbundle may fail without one."
   fi
 
-  if [[ -d "$HOME/.docker" ]]; then
+  if [[ -n "${CPA_DOCKER_CONFIG_DIR:-}" ]]; then
+    if [[ ! -d "$CPA_DOCKER_CONFIG_DIR" ]]; then
+      fail "CPA_DOCKER_CONFIG_DIR does not exist or is not a directory: $CPA_DOCKER_CONFIG_DIR"
+    fi
+    container_args+=(-v "$CPA_DOCKER_CONFIG_DIR:/root/.docker:ro")
+  elif [[ -d "$HOME/.docker" ]]; then
     container_args+=(-v "$HOME/.docker:/root/.docker:ro")
   elif [[ -f "$HOME/.config/containers/auth.json" ]]; then
     container_args+=(-v "$HOME/.config/containers/auth.json:/root/.docker/config.json:ro")

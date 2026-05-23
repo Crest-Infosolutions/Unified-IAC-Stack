@@ -1,0 +1,87 @@
+name: Pipeline Runner
+
+on:
+  pull_request:
+    paths:
+      - images/pipeline-runner/**
+      - .github/workflows/pipeline-runner.yml
+  push:
+    branches:
+      - main
+    paths:
+      - images/pipeline-runner/**
+      - .github/workflows/pipeline-runner.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGISTRY_NAME: crest
+  REGISTRY_SERVER: crest.azurecr.io
+  IMAGE_REPOSITORY: unified-iac-stack/pipeline-runner
+
+jobs:
+  build:
+    name: Build Pipeline Runner
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets['AZURE_CLIENT_ID'] }}
+      AZURE_TENANT_ID: ${{ secrets['AZURE_TENANT_ID'] }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets['AZURE_SUBSCRIPTION_ID'] }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Derive image tag
+        id: meta
+        run: echo "image_tag=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Build runner image
+        run: docker build --tag pipeline-runner:ci images/pipeline-runner
+
+      - name: Require Azure workload identity variables
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+
+          missing=()
+          for var_name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID; do
+            if [[ -z "${!var_name:-}" ]]; then
+              missing+=("$var_name")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "Missing GitHub secrets: ${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Azure login
+        if: github.event_name != 'pull_request'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        if: github.event_name != 'pull_request'
+        run: az acr login -n "$REGISTRY_NAME"
+
+      - name: Push runner image
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+
+          image_ref="$REGISTRY_SERVER/$IMAGE_REPOSITORY:${{ steps.meta.outputs.image_tag }}"
+          latest_ref="$REGISTRY_SERVER/$IMAGE_REPOSITORY:latest"
+
+          docker tag pipeline-runner:ci "$image_ref"
+          docker push "$image_ref"
+
+          if [[ "$GITHUB_REF_NAME" == "main" ]]; then
+            docker tag pipeline-runner:ci "$latest_ref"
+            docker push "$latest_ref"
+          fi

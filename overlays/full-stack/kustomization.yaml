@@ -1,0 +1,116 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: tfeplatform
+resources:
+  - namespace.yaml
+  - ../../base
+  - ../../bundles/bundled-services
+  - ../../integrations/azure-keyvault/lab
+  - ../../integrations/azure-keyvault/jobs-config
+  - ../../jobs/vault-bootstrap
+  - infra-serviceaccount.yaml
+  - infra-job.yaml
+  - config-serviceaccount.yaml
+  - config-job.yaml
+configMapGenerator:
+  - name: platform-config
+    envs:
+      - config/platform.env
+  - name: keyvault-config
+    envs:
+      - config/keyvault.env
+  - name: tfe-config
+    envs:
+      - config/tfe.env
+  - name: tfe-agent-config
+    envs:
+      - config/agent.env
+  - name: infra-platform-config
+    envs:
+      - config/infra-platform.env
+  - name: infra-pipeline-config
+    envs:
+      - config/infra-job.env
+  - name: config-platform-config
+    envs:
+      - config/config-platform.env
+  - name: config-pipeline-config
+    envs:
+      - config/config-job.env
+generatorOptions:
+  disableNameSuffixHash: true
+images:
+  - name: pipeline-image
+    newName: crest.azurecr.io/unified-iac-stack/pipeline-runner
+    newTag: sha-109e1fd90991
+replacements:
+  - source:
+      kind: ConfigMap
+      name: platform-config
+      fieldPath: data.ARM_CLIENT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: tfe-agent
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/client-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: keyvault-config
+      fieldPath: data.KEYVAULT_CLIENT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: azure-keyvault-reader
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/client-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: keyvault-config
+      fieldPath: data.KEYVAULT_TENANT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: azure-keyvault-reader
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/tenant-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: keyvault-config
+      fieldPath: data.KEYVAULT_URL
+    targets:
+      - select:
+          kind: SecretStore
+          name: azure-keyvault
+        fieldPaths:
+          - spec.provider.azurekv.vaultUrl
+  - source:
+      kind: ConfigMap
+      name: infra-platform-config
+      fieldPath: data.ARM_CLIENT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: infra-pipeline
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/client-id]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: config-platform-config
+      fieldPath: data.ARM_CLIENT_ID
+    targets:
+      - select:
+          kind: ServiceAccount
+          name: config-pipeline
+        fieldPaths:
+          - metadata.annotations.[azure.workload.identity/client-id]
+        options:
+          create: true

@@ -6,7 +6,7 @@ resources:
   - job.yaml
   - ../../integrations/azure-keyvault/jobs-config
 configMapGenerator:
-  - name: platform-config
+  - name: config-platform-config
     envs:
       - config/platform.env
   - name: config-pipeline-config
@@ -16,12 +16,12 @@ generatorOptions:
   disableNameSuffixHash: true
 images:
   - name: pipeline-image
-    newName: ghcr.io/example/pipeline
-    newTag: latest
+    newName: crest.azurecr.io/unified-iac-stack/pipeline-runner
+    newTag: sha-109e1fd90991
 replacements:
   - source:
       kind: ConfigMap
-      name: platform-config
+      name: config-platform-config
       fieldPath: data.ARM_CLIENT_ID
     targets:
       - select:

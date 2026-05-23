@@ -1,0 +1,111 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-bootstrap
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: vault-bootstrap
+      automountServiceAccountToken: true
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: pipeline-image
+          envFrom:
+            - configMapRef:
+                name: vault-bootstrap-config
+          volumeMounts:
+            - name: policies
+              mountPath: /bootstrap/policies
+              readOnly: true
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eu
+
+              until vault status -format=json >/tmp/vault-status.json 2>/dev/null; do
+                echo "Waiting for Vault to become reachable at ${VAULT_ADDR}"
+                sleep 5
+              done
+
+              if kubectl get secret "$VAULT_INIT_SECRET_NAME" >/dev/null 2>&1; then
+                ROOT_TOKEN=$(kubectl get secret "$VAULT_INIT_SECRET_NAME" -o jsonpath='{.data.root-token}' | base64 -d)
+                UNSEAL_KEY_1=$(kubectl get secret "$VAULT_INIT_SECRET_NAME" -o jsonpath='{.data.unseal-key-1}' | base64 -d)
+                UNSEAL_KEY_2=$(kubectl get secret "$VAULT_INIT_SECRET_NAME" -o jsonpath='{.data.unseal-key-2}' | base64 -d)
+                UNSEAL_KEY_3=$(kubectl get secret "$VAULT_INIT_SECRET_NAME" -o jsonpath='{.data.unseal-key-3}' | base64 -d)
+              else
+                vault operator init -format=json >/tmp/vault-init.json
+                ROOT_TOKEN=$(jq -r '.root_token' /tmp/vault-init.json)
+                UNSEAL_KEY_1=$(jq -r '.unseal_keys_b64[0]' /tmp/vault-init.json)
+                UNSEAL_KEY_2=$(jq -r '.unseal_keys_b64[1]' /tmp/vault-init.json)
+                UNSEAL_KEY_3=$(jq -r '.unseal_keys_b64[2]' /tmp/vault-init.json)
+
+                kubectl create secret generic "$VAULT_INIT_SECRET_NAME" \
+                  --from-literal=root-token="$ROOT_TOKEN" \
+                  --from-literal=unseal-key-1="$UNSEAL_KEY_1" \
+                  --from-literal=unseal-key-2="$UNSEAL_KEY_2" \
+                  --from-literal=unseal-key-3="$UNSEAL_KEY_3" \
+                  --dry-run=client \
+                  -o yaml | kubectl apply -f -
+              fi
+
+              if jq -e '.sealed' /tmp/vault-status.json >/dev/null 2>&1 && [ "$(jq -r '.sealed' /tmp/vault-status.json)" = "true" ]; then
+                vault operator unseal "$UNSEAL_KEY_1"
+                vault operator unseal "$UNSEAL_KEY_2"
+                vault operator unseal "$UNSEAL_KEY_3"
+              fi
+
+              vault login "$ROOT_TOKEN" >/dev/null
+
+              if ! vault secrets list -format=json | jq -e '."secret/"' >/dev/null 2>&1; then
+                vault secrets enable -path=secret kv-v2
+              fi
+
+              if ! vault auth list -format=json | jq -e '."kubernetes/"' >/dev/null 2>&1; then
+                vault auth enable kubernetes
+              fi
+
+              vault write auth/kubernetes/config \
+                kubernetes_host="$VAULT_K8S_HOST" \
+                kubernetes_ca_cert=@"$VAULT_K8S_CA_CERT_PATH" \
+                token_reviewer_jwt="$(cat "$VAULT_K8S_TOKEN_REVIEWER_JWT_PATH")"
+
+              for policy_file in /bootstrap/policies/*.hcl; do
+                policy_name=$(basename "$policy_file" .hcl)
+                vault policy write "$policy_name" "$policy_file"
+              done
+
+              vault write auth/kubernetes/role/"$VAULT_TFE_ROLE" \
+                bound_service_account_names="$TFE_SERVICE_ACCOUNT" \
+                bound_service_account_namespaces="$VAULT_NAMESPACE" \
+                policies=tfe \
+                ttl=1h
+
+              vault write auth/kubernetes/role/"$VAULT_TFE_AGENT_ROLE" \
+                bound_service_account_names="$TFE_AGENT_SERVICE_ACCOUNT" \
+                bound_service_account_namespaces="$VAULT_NAMESPACE" \
+                policies=tfe-agent \
+                ttl=1h
+
+              vault write auth/kubernetes/role/"$VAULT_INFRA_ROLE" \
+                bound_service_account_names="$INFRA_PIPELINE_SERVICE_ACCOUNT" \
+                bound_service_account_namespaces="$VAULT_NAMESPACE" \
+                policies=infra-pipeline \
+                ttl=1h
+
+              vault write auth/kubernetes/role/"$VAULT_CONFIG_ROLE" \
+                bound_service_account_names="$CONFIG_PIPELINE_SERVICE_ACCOUNT" \
+                bound_service_account_namespaces="$VAULT_NAMESPACE" \
+                policies=config-pipeline \
+                ttl=1h
+
+              if [ -n "${GITHUB_TOKEN_VALUE:-}" ]; then
+                vault kv put "$VAULT_GITHUB_TOKEN_PATH" token="$GITHUB_TOKEN_VALUE"
+              fi
+      volumes:
+        - name: policies
+          configMap:
+            name: vault-bootstrap-policies

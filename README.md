@@ -6,10 +6,11 @@ The stack has been restructured around Kustomize overlays so that the same deplo
 
 ## What This Repository Provides
 
-The package is built around a shared core and two deployment profiles:
+The package is built around a shared core and three deployment profiles:
 
 - `overlays/lab` for short-lived environments with bundled PostgreSQL, Redis, and Vault.
 - `overlays/enterprise` for environments that use external platform services.
+- `overlays/full-stack` for an internal full-stack AKS bundle that composes the core platform, bundled services, Vault bootstrap, and the optional automation jobs.
 
 Across both profiles, the repository provides:
 
@@ -30,6 +31,8 @@ The deployment is organised into four layers:
 - `overlays/` assembles the final deployment for each environment profile.
 
 Optional automation lives under `jobs/` and can be enabled after the core platform is running.
+
+The Vault bootstrap scaffold lives under [jobs/vault-bootstrap/kustomization.yaml](/Users/radakichenin/aiprojects/Unified-IAC-Stack/jobs/vault-bootstrap/kustomization.yaml#L1), and the first-party runner image scaffold lives under [images/pipeline-runner/README.md](/Users/radakichenin/aiprojects/Unified-IAC-Stack/images/pipeline-runner/README.md#L1).
 
 ## Deployment Profiles
 
@@ -54,6 +57,20 @@ The enterprise profile is intended for environments where the surrounding platfo
 
 In this mode, the deployment expects external endpoints and credentials for services such as PostgreSQL, Redis, Vault, TLS, and object storage.
 
+### Full-Stack Profile
+
+The full-stack profile is an internal composition entrypoint for AKS environments where you want one overlay to render:
+
+- Terraform Enterprise
+- TFE agent
+- PostgreSQL in cluster
+- Redis in cluster
+- Vault in cluster
+- Vault bootstrap resources
+- infrastructure and configuration jobs
+
+The entrypoint is [overlays/full-stack/kustomization.yaml](/Users/radakichenin/aiprojects/Unified-IAC-Stack/overlays/full-stack/kustomization.yaml#L1). It is intended for implementation and validation work, not as a finished production topology.
+
 ## Repository Structure
 
 ```text
@@ -61,12 +78,16 @@ In this mode, the deployment expects external endpoints and credentials for serv
 ├── base/
 ├── bundles/
 │   └── bundled-services/
+├── images/
+│   └── pipeline-runner/
 ├── integrations/
 │   └── azure-keyvault/
 ├── jobs/
 │   ├── config/
-│   └── infra/
+│   ├── infra/
+│   └── vault-bootstrap/
 └── overlays/
+    ├── full-stack/
     ├── enterprise/
     └── lab/
 ```
@@ -75,7 +96,10 @@ If you are new to the repository, the best starting points are:
 
 - `overlays/lab/kustomization.yaml`
 - `overlays/enterprise/kustomization.yaml`
+- `overlays/full-stack/kustomization.yaml`
 - `base/kustomization.yaml`
+- `FULL-STACK-AKS-BUNDLE-IMPLEMENTATION-PLAN.md` for the concrete file-by-file implementation plan for the full-stack AKS bundle
+- `POC-CRITERIA-GAP-ANALYSIS.md` for the saved gap analysis against the stakeholder criteria captured in `criteria.docx`
 
 ## Key Improvements In This Version
 

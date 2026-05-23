@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: config-pipeline
+  name: infra-pipeline
 spec:
   backoffLimit: 1
   template:
@@ -9,7 +9,7 @@ spec:
       labels:
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: config-pipeline
+      serviceAccountName: infra-pipeline
       automountServiceAccountToken: true
       restartPolicy: Never
       containers:
@@ -20,13 +20,9 @@ spec:
               value: /var/run/secrets/azure/tokens/azure-identity-token
           envFrom:
             - configMapRef:
-              name: config-platform-config
+                name: infra-platform-config
             - configMapRef:
-                name: config-pipeline-config
-          volumeMounts:
-            - name: ssh-key
-              mountPath: /root/.ssh
-              readOnly: true
+                name: infra-pipeline-config
           command:
             - /bin/sh
             - -c
@@ -78,8 +74,6 @@ spec:
               require_uuid_value ARM_TENANT_ID
               require_uuid_value ARM_SUBSCRIPTION_ID
               require_repo_value LZ_MODULES_REPO
-              require_repo_value ANSIBLE_REPO
-              require_value ANSIBLE_PLAYBOOK
               require_ssh_public_key
 
               VAULT_AUTH_PATH="${VAULT_AUTH_PATH:-auth/${VAULT_AUTH_METHOD}/login}"
@@ -97,23 +91,53 @@ spec:
               export ARM_OIDC_TOKEN_FILE_PATH="$OIDC_TOKEN_FILE"
 
               git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${LZ_MODULES_REPO}.git" lz-modules
-              git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${ANSIBLE_REPO}.git" ansible
 
-              cd lz-modules
-              terraform init -input=false
-              terraform output -json > /tmp/tf-output.json
+              if [ "${RUN_PACKER}" = "true" ]; then
+                require_repo_value PACKER_REPO
+                require_repo_value IMAGE_REGISTRY_REPO
+                require_value PACKER_TEMPLATE
+                require_value IMAGE_REGISTRY_FILE
+                require_value IMAGE_REGISTRY_KEY
 
-              cd ../ansible
-              python3 generate_inventory.py /tmp/tf-output.json > inventory.ini
+                git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${PACKER_REPO}.git" packer-images
+                git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${IMAGE_REGISTRY_REPO}.git" image-registry
 
-              if [ "${SSH_WAIT_SECONDS:-0}" -gt 0 ]; then
-                sleep "$SSH_WAIT_SECONDS"
+                az login --service-principal \
+                  --username "$ARM_CLIENT_ID" \
+                  --tenant "$ARM_TENANT_ID" \
+                  --federated-token "$(cat "$OIDC_TOKEN_FILE")"
+
+                IMAGE_VERSION="${IMAGE_VERSION:-$(date +%Y.%m.%d%H%M)}"
+
+                cd packer-images
+                packer init .
+                packer build -var "image_version=$IMAGE_VERSION" "$PACKER_TEMPLATE"
+
+                cd ../image-registry
+                jq --arg image_key "$IMAGE_REGISTRY_KEY" --arg image_version "$IMAGE_VERSION" '.[$image_key]=$image_version' "$IMAGE_REGISTRY_FILE" > /tmp/images.json
+                mv /tmp/images.json "$IMAGE_REGISTRY_FILE"
+                git config --global user.email "${GIT_AUTHOR_EMAIL:-pipeline@local}"
+                git config --global user.name "${GIT_AUTHOR_NAME:-pipeline}"
+                git add "$IMAGE_REGISTRY_FILE"
+                git commit -m "Update ${IMAGE_REGISTRY_KEY} image to ${IMAGE_VERSION}" || true
+                git push
+                cd ../lz-modules
+              else
+                cd lz-modules
               fi
 
-              ansible all -i inventory.ini -m ping
-              ansible-playbook "$ANSIBLE_PLAYBOOK" -i inventory.ini
-      volumes:
-        - name: ssh-key
-          secret:
-            secretName: ssh-key
-            defaultMode: 0600
+              terraform init -reconfigure
+
+              case "$TERRAFORM_ACTION" in
+                apply)
+                  terraform plan -out /tmp/tfplan
+                  terraform apply -auto-approve /tmp/tfplan
+                  ;;
+                destroy)
+                  terraform destroy -auto-approve
+                  ;;
+                *)
+                  echo "Unsupported TERRAFORM_ACTION: $TERRAFORM_ACTION" >&2
+                  exit 1
+                  ;;
+              esac

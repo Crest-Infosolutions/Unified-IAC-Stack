@@ -20,7 +20,7 @@ spec:
               value: /var/run/secrets/azure/tokens/azure-identity-token
           envFrom:
             - configMapRef:
-              name: config-platform-config
+                name: config-platform-config
             - configMapRef:
                 name: config-pipeline-config
           volumeMounts:

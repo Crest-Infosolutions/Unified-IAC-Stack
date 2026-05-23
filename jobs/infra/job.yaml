@@ -20,7 +20,7 @@ spec:
               value: /var/run/secrets/azure/tokens/azure-identity-token
           envFrom:
             - configMapRef:
-                name: platform-config
+              name: infra-platform-config
             - configMapRef:
                 name: infra-pipeline-config
           command:
@@ -28,7 +28,53 @@ spec:
             - -c
           args:
             - |
-              set -eux
+              set -eu
+
+              require_value() {
+                var_name="$1"
+                var_value="${!var_name:-}"
+                if [ -z "$var_value" ]; then
+                  echo "Missing required value for $var_name" >&2
+                  exit 1
+                fi
+              }
+
+              require_repo_value() {
+                var_name="$1"
+                require_value "$var_name"
+                case "${!var_name}" in
+                  */*) ;;
+                  *)
+                    echo "$var_name must be set to an owner/repository path" >&2
+                    exit 1
+                    ;;
+                esac
+              }
+
+              require_uuid_value() {
+                var_name="$1"
+                require_value "$var_name"
+                if [ "${!var_name}" = "00000000-0000-0000-0000-000000000000" ]; then
+                  echo "$var_name must be set to a real Azure identifier" >&2
+                  exit 1
+                fi
+              }
+
+              require_ssh_public_key() {
+                require_value TF_VAR_SSH_PUBLIC_KEY
+                case "$TF_VAR_SSH_PUBLIC_KEY" in
+                  *CHANGE_ME*)
+                    echo "TF_VAR_SSH_PUBLIC_KEY must be set to a real SSH public key" >&2
+                    exit 1
+                    ;;
+                esac
+              }
+
+              require_uuid_value ARM_CLIENT_ID
+              require_uuid_value ARM_TENANT_ID
+              require_uuid_value ARM_SUBSCRIPTION_ID
+              require_repo_value LZ_MODULES_REPO
+              require_ssh_public_key
 
               VAULT_AUTH_PATH="${VAULT_AUTH_PATH:-auth/${VAULT_AUTH_METHOD}/login}"
               JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
@@ -47,6 +93,12 @@ spec:
               git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${LZ_MODULES_REPO}.git" lz-modules
 
               if [ "${RUN_PACKER}" = "true" ]; then
+                require_repo_value PACKER_REPO
+                require_repo_value IMAGE_REGISTRY_REPO
+                require_value PACKER_TEMPLATE
+                require_value IMAGE_REGISTRY_FILE
+                require_value IMAGE_REGISTRY_KEY
+
                 git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${PACKER_REPO}.git" packer-images
                 git clone "https://x-access-token:${GITHUB_TOKEN}@${GIT_HOST}/${IMAGE_REGISTRY_REPO}.git" image-registry
 

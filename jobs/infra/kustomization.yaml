@@ -5,7 +5,7 @@ resources:
   - serviceaccount.yaml
   - job.yaml
 configMapGenerator:
-  - name: platform-config
+  - name: infra-platform-config
     envs:
       - config/platform.env
   - name: infra-pipeline-config
@@ -15,12 +15,12 @@ generatorOptions:
   disableNameSuffixHash: true
 images:
   - name: pipeline-image
-    newName: ghcr.io/example/pipeline
-    newTag: latest
+    newName: crest.azurecr.io/unified-iac-stack/pipeline-runner
+    newTag: sha-109e1fd90991
 replacements:
   - source:
       kind: ConfigMap
-      name: platform-config
+      name: infra-platform-config
       fieldPath: data.ARM_CLIENT_ID
     targets:
       - select:

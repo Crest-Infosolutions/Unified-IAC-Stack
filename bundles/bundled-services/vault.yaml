@@ -40,7 +40,7 @@ spec:
         runAsUser: 0
       containers:
         - name: vault
-          image: hashicorp/vault:1.17.3
+          image: crest.azurecr.io/hashicorp/vault-enterprise-fips@sha256:9dbcfc5652839c048f80232581efb8d94e09e10b8ca0f0d29a0126e3d07930c9
           command:
             - /bin/sh
             - -c

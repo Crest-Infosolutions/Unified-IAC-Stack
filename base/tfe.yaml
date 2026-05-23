@@ -21,7 +21,7 @@ spec:
         runAsNonRoot: false
       initContainers:
         - name: tfe-init
-          image: busybox
+          image: crest.azurecr.io/library/busybox@sha256:7a634b8e555c3f394551ae422325e7f9d9d1420e8ac7e8f7ac6ce311dca91b0d
           command:
             - sh
             - -c
@@ -38,7 +38,7 @@ spec:
               name: tfe-tls-writable
       containers:
         - name: tfe
-          image: images.releases.hashicorp.com/hashicorp/terraform-enterprise:v202501-1
+          image: crest.azurecr.io/terraform-enterprise@sha256:53a98c93d4f5e6655b439569d7fce717521e4e5655e3cf4ee107d0536fb47f0d
           securityContext:
             runAsUser: 0
             runAsNonRoot: false

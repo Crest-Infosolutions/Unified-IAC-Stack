@@ -70,6 +70,50 @@ spec:
                 esac
               }
 
+              wait_for_vault_login() {
+                attempt=1
+                max_attempts="${VAULT_READY_MAX_ATTEMPTS:-60}"
+                retry_seconds="${VAULT_READY_RETRY_SECONDS:-10}"
+
+                while true; do
+                  if VAULT_TOKEN=$(vault write -field=token "$VAULT_AUTH_PATH" role="$VAULT_ROLE" jwt="$JWT" 2>/dev/null); then
+                    export VAULT_TOKEN
+                    return 0
+                  fi
+
+                  if [ "$attempt" -ge "$max_attempts" ]; then
+                    echo "Vault role $VAULT_ROLE was not ready after ${max_attempts} attempts" >&2
+                    return 1
+                  fi
+
+                  echo "Waiting for Vault role $VAULT_ROLE to become ready (${attempt}/${max_attempts})"
+                  attempt=$((attempt + 1))
+                  sleep "$retry_seconds"
+                done
+              }
+
+              wait_for_github_token() {
+                attempt=1
+                max_attempts="${VAULT_SECRET_MAX_ATTEMPTS:-60}"
+                retry_seconds="${VAULT_SECRET_RETRY_SECONDS:-10}"
+
+                while true; do
+                  if GITHUB_TOKEN=$(vault kv get -field=token "$VAULT_GITHUB_TOKEN_PATH" 2>/dev/null); then
+                    export GITHUB_TOKEN
+                    return 0
+                  fi
+
+                  if [ "$attempt" -ge "$max_attempts" ]; then
+                    echo "Vault path $VAULT_GITHUB_TOKEN_PATH did not contain a GitHub token after ${max_attempts} attempts" >&2
+                    return 1
+                  fi
+
+                  echo "Waiting for Vault GitHub token at $VAULT_GITHUB_TOKEN_PATH (${attempt}/${max_attempts})"
+                  attempt=$((attempt + 1))
+                  sleep "$retry_seconds"
+                done
+              }
+
               require_uuid_value ARM_CLIENT_ID
               require_uuid_value ARM_TENANT_ID
               require_uuid_value ARM_SUBSCRIPTION_ID
@@ -78,10 +122,8 @@ spec:
 
               VAULT_AUTH_PATH="${VAULT_AUTH_PATH:-auth/${VAULT_AUTH_METHOD}/login}"
               JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-              VAULT_TOKEN=$(vault write -field=token "$VAULT_AUTH_PATH" role="$VAULT_ROLE" jwt="$JWT")
-              export VAULT_TOKEN
-
-              GITHUB_TOKEN=$(vault kv get -field=token "$VAULT_GITHUB_TOKEN_PATH")
+              wait_for_vault_login
+              wait_for_github_token
               OIDC_TOKEN_FILE="${AZURE_FEDERATED_TOKEN_FILE:-${ARM_OIDC_TOKEN_FILE_PATH}}"
 
               export TF_VAR_github_token="$GITHUB_TOKEN"

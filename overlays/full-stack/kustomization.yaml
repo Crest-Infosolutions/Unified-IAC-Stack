@@ -42,7 +42,7 @@ generatorOptions:
 images:
   - name: pipeline-image
     newName: crest.azurecr.io/unified-iac-stack/pipeline-runner
-    newTag: sha-109e1fd90991
+    digest: sha256:1d8c8397c2e54136b68af13595dd35b91a7b3a38214c23ad42db7f003bca4dce
 replacements:
   - source:
       kind: ConfigMap

@@ -183,6 +183,12 @@ Key Vault secret `ssh-key`
 
 - SSH private key content used to create `/root/.ssh/id_rsa`
 
+### Additional Object For The Optional Automation Jobs
+
+Key Vault secret `github-token`
+
+- GitHub token used by Vault bootstrap to seed `secret/github` for the infra and config pipeline jobs
+
 ## Configuration Model
 
 Environment-specific settings are managed through env files inside each overlay or job package.

@@ -5,6 +5,7 @@ ARG TERRAFORM_VERSION=1.9.8
 ARG PACKER_VERSION=1.11.2
 ARG VAULT_VERSION=1.17.5
 ARG ANSIBLE_CORE_VERSION=2.17.9
+ARG KUBECTL_VERSION=v1.36.1
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -26,6 +27,9 @@ RUN curl -fsSL https://aka.ms/InstallAzureCLIDeb | bash
 
 RUN python3 -m pip install --no-cache-dir "ansible-core==${ANSIBLE_CORE_VERSION}"
 
+RUN curl -fsSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
+    && chmod +x /usr/local/bin/kubectl
+
 RUN curl -fsSLo /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
     && unzip -o /tmp/terraform.zip -d /usr/local/bin \
     && rm /tmp/terraform.zip
@@ -42,6 +46,7 @@ RUN terraform version \
     && packer version \
     && vault version \
     && ansible --version \
+    && kubectl version --client \
     && az version >/tmp/az-version.json \
     && python3 --version \
     && jq --version

@@ -15,6 +15,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: vault-bootstrap-config
+            - secretRef:
+                name: github-token
+                optional: true
           volumeMounts:
             - name: policies
               mountPath: /bootstrap/policies

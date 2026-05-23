@@ -1,0 +1,20 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: github-token
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: SecretStore
+    name: azure-keyvault
+  target:
+    name: github-token
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        GITHUB_TOKEN_VALUE: '{{ .token }}'
+  data:
+    - secretKey: token
+      remoteRef:
+        key: github-token

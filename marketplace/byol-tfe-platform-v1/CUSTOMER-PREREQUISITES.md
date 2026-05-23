@@ -52,11 +52,13 @@ The package expects these Key Vault objects to exist before installation:
 
 | Key Vault object | Required content | Consumed as |
 | --- | --- | --- |
-| `hc-pull-secret` | Docker config JSON for the image pull secret | Kubernetes secret `hc-pull-secret` with type `kubernetes.io/dockerconfigjson` |
+| `hc-pull-secret` | Docker config JSON that can authenticate to `crest.azurecr.io` | Kubernetes secret `hc-pull-secret` with type `kubernetes.io/dockerconfigjson` |
 | `tfe-secrets` | JSON object containing `TFE_LICENSE`, `TFE_ENCRYPTION_PASSWORD`, `TFE_DATABASE_PASSWORD`, `TFE_OBJECT_STORAGE_AZURE_ACCOUNT_KEY`, and `TFE_VAULT_TOKEN` | Kubernetes secret `tfe-secrets` consumed by the `tfe` deployment |
 | `tfe-agent-secrets` | JSON object containing `TFC_AGENT_TOKEN` | Kubernetes secret `tfe-agent-secrets` consumed by the `tfe-agent` deployment |
 | `tfe-tls-crt` | PEM-encoded certificate chain for the Terraform Enterprise hostname | Kubernetes TLS secret `tfe-tls` key `tls.crt` |
 | `tfe-tls-key` | PEM-encoded private key for the Terraform Enterprise hostname | Kubernetes TLS secret `tfe-tls` key `tls.key` |
+
+The default chart image settings resolve to mirrored runtime images in `crest.azurecr.io`, so the Docker config stored in `hc-pull-secret` must be valid for that registry.
 
 ## External PostgreSQL Requirements
 

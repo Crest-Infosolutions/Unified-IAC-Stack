@@ -111,6 +111,7 @@ This refactor focused on reuse, separation of concerns, and safer operations.
 - Bundled lab services are isolated from the shared Terraform Enterprise core.
 - Optional jobs are packaged separately from the main platform deployment.
 - Azure Key Vault now acts as the source of truth for runtime secrets.
+- Shared manifests now pin the approved runtime images to digest-based refs in `crest.azurecr.io`.
 
 One important note remains: while the manifests no longer contain the old secret values, this repository may still contain them in Git history. Any previously committed credentials should be rotated before reuse.
 
@@ -166,7 +167,7 @@ Key Vault secret `tfe-tls-key`
 
 Key Vault secret `hc-pull-secret`
 
-- Docker config JSON content used to create the image pull secret
+- Docker config JSON content used to authenticate pulls from `crest.azurecr.io` for the mirrored runtime images
 
 ### Additional Object For The Lab Profile
 
@@ -285,4 +286,4 @@ If you are targeting a more permanent environment, start with the enterprise pro
 
 - The lab profile uses single-node bundled services and is not intended for production.
 - Terraform Enterprise still consumes `TFE_VAULT_TOKEN`; it is now sourced from Azure Key Vault, but a more complete Vault bootstrap and runtime authentication flow would still be a useful next step.
-- The optional job image reference is a placeholder and should be replaced with your own pipeline image before use.
+- The optional job packages are pinned to the first-party runner image in `crest.azurecr.io`; validate that image against your repos and environment before production use.

@@ -38,7 +38,7 @@ marketplace/byol-tfe-platform-v1/
   - `tfe-agent-secrets`
   - `tfe-tls-crt`
   - `tfe-tls-key`
-  - `hc-pull-secret`
+  - `hc-pull-secret` containing Docker auth for `crest.azurecr.io`
 - Federated identity for the `azure-keyvault-reader` service account
 - Federated identity for the `tfe-agent` service account
 - External PostgreSQL endpoint
@@ -48,14 +48,15 @@ marketplace/byol-tfe-platform-v1/
 
 ## Marketplace Notes
 
-- `manifest.yaml` still contains a placeholder ACR hostname. Replace it with your publisher ACR before running the packaging tool.
+- `manifest.yaml` currently points at `crest.azurecr.io`. Change it only if you publish from a different ACR.
 - `mainTemplate.json` contains `DONOTMODIFY` placeholders for the Marketplace plan metadata. These are expected in Marketplace samples and are completed during the packaging and Partner Center flow.
-- The chart now pins concrete defaults for the Terraform Enterprise agent and init container. Replace them with your own approved immutable tags or digests before publication.
+- The chart defaults now resolve to digest-pinned Terraform Enterprise, TFE agent, and TLS init images in `crest.azurecr.io`.
+- The `hc-pull-secret` Key Vault object must contain Docker auth that can pull from `crest.azurecr.io`.
 
 ## Hardened Contract Notes
 
 - The Marketplace UI is restricted to an existing AKS cluster and a `LoadBalancer` service model.
-- The chart schema enforces pinned image tags and a single supported replica count for both Terraform Enterprise and the agent.
+- The chart resolves runtime images from `crest.azurecr.io` and keeps the single supported replica count for both Terraform Enterprise and the agent.
 - If external Vault integration is enabled, the Vault endpoints and role must be supplied explicitly.
 
 ## Example Values

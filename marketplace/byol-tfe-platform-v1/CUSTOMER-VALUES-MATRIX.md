@@ -86,24 +86,24 @@ Column definitions:
 
 | Value name | Description | Required | Example | Source of truth | Flow |
 | --- | --- | --- | --- | --- | --- |
-| `global.azure.images.tfe.registry` | Terraform Enterprise image registry path | Yes (defaulted) | `images.releases.hashicorp.com/hashicorp` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfe.registry` | Terraform Enterprise image registry path | Yes (defaulted) | `crest.azurecr.io` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfe.image` | Terraform Enterprise image name | Yes (defaulted) | `terraform-enterprise` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfe.tag` | Terraform Enterprise image tag | Yes (defaulted) | `v202501-1` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfe.digest` | Terraform Enterprise image digest override | Optional | `` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfeAgent.registry` | Terraform Enterprise agent image registry path | Yes (defaulted) | `docker.io/hashicorp` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfe.digest` | Terraform Enterprise image digest override | Optional | `sha256:53a98c93d4f5e6655b439569d7fce717521e4e5655e3cf4ee107d0536fb47f0d` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfeAgent.registry` | Terraform Enterprise agent image registry path | Yes (defaulted) | `crest.azurecr.io/hashicorp` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfeAgent.image` | Terraform Enterprise agent image name | Yes (defaulted) | `tfc-agent` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfeAgent.tag` | Terraform Enterprise agent image tag | Yes (defaulted) | `1.28.10` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfeAgent.digest` | Terraform Enterprise agent image digest override | Optional | `` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tlsInit.registry` | TLS init container image registry path | Yes (defaulted) | `docker.io/library` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfeAgent.digest` | Terraform Enterprise agent image digest override | Optional | `sha256:2a910a85203760d84de8da4a95d839599cb50253cfac1f4ed23a6bd94dd8f5f4` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tlsInit.registry` | TLS init container image registry path | Yes (defaulted) | `crest.azurecr.io/library` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tlsInit.image` | TLS init container image name | Yes (defaulted) | `busybox` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tlsInit.tag` | TLS init container image tag | Yes (defaulted) | `1.37.0` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tlsInit.digest` | TLS init container image digest override | Optional | `` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tlsInit.digest` | TLS init container image digest override | Optional | `sha256:7a634b8e555c3f394551ae422325e7f9d9d1420e8ac7e8f7ac6ce311dca91b0d` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 
 ## Secret Material Passed Through External Secrets
 
 | Secret material | Description | Required | Example | Source of truth | Flow |
 | --- | --- | --- | --- | --- | --- |
-| `hc-pull-secret.dockerconfigjson` | Docker auth config used to pull images | Yes | JSON docker config payload | `chart/templates/externalsecrets.yaml` | Key Vault -> ExternalSecret -> Kubernetes secret |
+| `hc-pull-secret.dockerconfigjson` | Docker auth config used to pull the mirrored runtime images from `crest.azurecr.io` | Yes | JSON docker config payload | `chart/templates/externalsecrets.yaml` | Key Vault -> ExternalSecret -> Kubernetes secret |
 | `tfe-secrets.TFE_LICENSE` | Terraform Enterprise license value | Yes | Customer license string | `README.md`, `chart/templates/externalsecrets.yaml` | Key Vault -> ExternalSecret -> Kubernetes secret |
 | `tfe-secrets.TFE_ENCRYPTION_PASSWORD` | Terraform Enterprise encryption password | Yes | Redacted | `README.md`, `chart/templates/externalsecrets.yaml` | Key Vault -> ExternalSecret -> Kubernetes secret |
 | `tfe-secrets.TFE_DATABASE_PASSWORD` | PostgreSQL password for Terraform Enterprise | Yes | Redacted | `README.md`, `chart/templates/externalsecrets.yaml` | Key Vault -> ExternalSecret -> Kubernetes secret |

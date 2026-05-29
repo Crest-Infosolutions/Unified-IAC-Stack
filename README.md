@@ -177,6 +177,10 @@ Key Vault secret `postgres-secrets`
 - JSON object containing `POSTGRES_USER`
 - JSON object containing `POSTGRES_PASSWORD`
 
+Key Vault secret `vault-license`
+
+- Vault Enterprise license content used to populate the `VAULT_LICENSE` environment variable for the bundled Vault pod
+
 ### Additional Object For The Optional Configuration Job
 
 Key Vault secret `ssh-key`

@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - ../common
   - postgres-secrets.yaml
+  - vault-license.yaml

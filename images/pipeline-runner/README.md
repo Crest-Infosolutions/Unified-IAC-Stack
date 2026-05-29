@@ -22,7 +22,7 @@ It is intended to include the minimum toolchain needed by the current job script
 ## Local Build
 
 ```bash
-docker build -t pipeline-runner:dev images/pipeline-runner
+docker --context default buildx build --builder default --platform linux/amd64 -t pipeline-runner:dev images/pipeline-runner
 ```
 
 ## Planned Registry Path
@@ -30,13 +30,13 @@ docker build -t pipeline-runner:dev images/pipeline-runner
 The repo kustomizations currently point at:
 
 ```text
-crest.azurecr.io/unified-iac-stack/pipeline-runner@sha256:1d8c8397c2e54136b68af13595dd35b91a7b3a38214c23ad42db7f003bca4dce
+crest.azurecr.io/unified-iac-stack/pipeline-runner@sha256:62f9f3cdd4b83f598f2b05561c8eab7a0ef9d14c7153c0980d58e02e6a55823e
 ```
 
 The image currently published for this scaffold resolves to registry digest:
 
 ```text
-sha256:1d8c8397c2e54136b68af13595dd35b91a7b3a38214c23ad42db7f003bca4dce
+sha256:62f9f3cdd4b83f598f2b05561c8eab7a0ef9d14c7153c0980d58e02e6a55823e
 ```
 
 Before promoting this beyond scaffold status, validate that all three job packages succeed with the pinned image and then decide whether to keep manual pinning or let CI own future tag promotion.

@@ -305,6 +305,8 @@ run_cpa() {
 
   local container_runtime
   local container_socket
+  local docker_config_mount=
+  local cpa_entrypoint_cmd="set -euo pipefail"
   local container_args=(
     --rm
     -e "REGISTRY_NAME=$REGISTRY_NAME"
@@ -327,11 +329,23 @@ run_cpa() {
     if [[ ! -d "$CPA_DOCKER_CONFIG_DIR" ]]; then
       fail "CPA_DOCKER_CONFIG_DIR does not exist or is not a directory: $CPA_DOCKER_CONFIG_DIR"
     fi
-    container_args+=(-v "$CPA_DOCKER_CONFIG_DIR:/root/.docker:ro")
+    docker_config_mount="$CPA_DOCKER_CONFIG_DIR"
   elif [[ -d "$HOME/.docker" ]]; then
-    container_args+=(-v "$HOME/.docker:/root/.docker:ro")
+    docker_config_mount="$HOME/.docker"
   elif [[ -f "$HOME/.config/containers/auth.json" ]]; then
-    container_args+=(-v "$HOME/.config/containers/auth.json:/root/.docker/config.json:ro")
+    docker_config_mount="$(dirname "$HOME/.config/containers/auth.json")"
+  fi
+
+  if [[ -n "$docker_config_mount" ]]; then
+    container_args+=(-v "$docker_config_mount:/cpa-host-docker-config:ro")
+    cpa_entrypoint_cmd+="; mkdir -p /tmp/cpa-docker-config"
+    cpa_entrypoint_cmd+="; cp -R /cpa-host-docker-config/. /tmp/cpa-docker-config/ 2>/dev/null || true"
+
+    if [[ ! -f "$docker_config_mount/config.json" && -f "$HOME/.config/containers/auth.json" ]]; then
+      container_args+=(-v "$HOME/.config/containers/auth.json:/tmp/cpa-docker-config/config.json:ro")
+    fi
+
+    cpa_entrypoint_cmd+="; export DOCKER_CONFIG=/tmp/cpa-docker-config"
   fi
 
   if [[ -d "$HOME/.azure" ]]; then
@@ -343,5 +357,5 @@ run_cpa() {
   "$container_runtime" pull "$CPA_IMAGE" >/dev/null
 
   info "Running cpa $cpa_subcommand"
-  "$container_runtime" run "${container_args[@]}" --entrypoint /bin/bash "$CPA_IMAGE" -lc "set -euo pipefail; cpa $cpa_subcommand $*"
+  "$container_runtime" run "${container_args[@]}" --entrypoint /bin/bash "$CPA_IMAGE" -lc "$cpa_entrypoint_cmd; cpa $cpa_subcommand $*"
 }

@@ -21,7 +21,7 @@ spec:
         runAsNonRoot: false
       initContainers:
         - name: tfe-init
-          image: crest.azurecr.io/library/busybox@sha256:7a634b8e555c3f394551ae422325e7f9d9d1420e8ac7e8f7ac6ce311dca91b0d
+          image: crest.azurecr.io/library/busybox@sha256:92b1d1cae5f235812184415e63d9b24464116c58d3ba3c460b1eb0247f0f46e3
           command:
             - sh
             - -c

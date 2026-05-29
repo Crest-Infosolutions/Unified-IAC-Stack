@@ -261,9 +261,19 @@
                   "type": "object",
                   "required": [
                     "registry",
-                    "image",
-                    "tag",
-                    "digest"
+                    "image"
+                  ],
+                  "oneOf": [
+                    {
+                      "required": [
+                        "tag"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "digest"
+                      ]
+                    }
                   ],
                   "properties": {
                     "registry": {
@@ -282,7 +292,8 @@
                       }
                     },
                     "digest": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   }
                 },
@@ -290,9 +301,19 @@
                   "type": "object",
                   "required": [
                     "registry",
-                    "image",
-                    "tag",
-                    "digest"
+                    "image"
+                  ],
+                  "oneOf": [
+                    {
+                      "required": [
+                        "tag"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "digest"
+                      ]
+                    }
                   ],
                   "properties": {
                     "registry": {
@@ -311,7 +332,8 @@
                       }
                     },
                     "digest": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   }
                 },
@@ -319,9 +341,19 @@
                   "type": "object",
                   "required": [
                     "registry",
-                    "image",
-                    "tag",
-                    "digest"
+                    "image"
+                  ],
+                  "oneOf": [
+                    {
+                      "required": [
+                        "tag"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "digest"
+                      ]
+                    }
                   ],
                   "properties": {
                     "registry": {
@@ -340,7 +372,8 @@
                       }
                     },
                     "digest": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   }
                 }

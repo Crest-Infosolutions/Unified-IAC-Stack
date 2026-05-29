@@ -73,15 +73,12 @@ global:
       tfe:
         registry: crest.azurecr.io
         image: terraform-enterprise
-        tag: v202501-1
         digest: sha256:53a98c93d4f5e6655b439569d7fce717521e4e5655e3cf4ee107d0536fb47f0d
       tfeAgent:
         registry: crest.azurecr.io/hashicorp
         image: tfc-agent
-        tag: 1.28.10
-        digest: sha256:2a910a85203760d84de8da4a95d839599cb50253cfac1f4ed23a6bd94dd8f5f4
+        digest: sha256:cec9c92f86f6f27d9fef9c6f44461e48994207a71f70cd21749dd54e9a395765
       tlsInit:
         registry: crest.azurecr.io/library
         image: busybox
-        tag: 1.37.0
-        digest: sha256:7a634b8e555c3f394551ae422325e7f9d9d1420e8ac7e8f7ac6ce311dca91b0d
+        digest: sha256:92b1d1cae5f235812184415e63d9b24464116c58d3ba3c460b1eb0247f0f46e3

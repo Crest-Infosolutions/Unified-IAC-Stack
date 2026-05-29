@@ -88,16 +88,16 @@ Column definitions:
 | --- | --- | --- | --- | --- | --- |
 | `global.azure.images.tfe.registry` | Terraform Enterprise image registry path | Yes (defaulted) | `crest.azurecr.io` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfe.image` | Terraform Enterprise image name | Yes (defaulted) | `terraform-enterprise` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfe.tag` | Terraform Enterprise image tag | Yes (defaulted) | `v202501-1` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfe.digest` | Terraform Enterprise image digest override | Optional | `sha256:53a98c93d4f5e6655b439569d7fce717521e4e5655e3cf4ee107d0536fb47f0d` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfe.tag` | Terraform Enterprise image tag override when not using a digest | Optional | `v202501-1` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfe.digest` | Terraform Enterprise image digest | Yes (defaulted) | `sha256:53a98c93d4f5e6655b439569d7fce717521e4e5655e3cf4ee107d0536fb47f0d` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfeAgent.registry` | Terraform Enterprise agent image registry path | Yes (defaulted) | `crest.azurecr.io/hashicorp` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tfeAgent.image` | Terraform Enterprise agent image name | Yes (defaulted) | `tfc-agent` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfeAgent.tag` | Terraform Enterprise agent image tag | Yes (defaulted) | `1.28.10` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tfeAgent.digest` | Terraform Enterprise agent image digest override | Optional | `sha256:2a910a85203760d84de8da4a95d839599cb50253cfac1f4ed23a6bd94dd8f5f4` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfeAgent.tag` | Terraform Enterprise agent image tag override when not using a digest | Optional | `1.28.10` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tfeAgent.digest` | Terraform Enterprise agent image digest | Yes (defaulted) | `sha256:cec9c92f86f6f27d9fef9c6f44461e48994207a71f70cd21749dd54e9a395765` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tlsInit.registry` | TLS init container image registry path | Yes (defaulted) | `crest.azurecr.io/library` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 | `global.azure.images.tlsInit.image` | TLS init container image name | Yes (defaulted) | `busybox` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tlsInit.tag` | TLS init container image tag | Yes (defaulted) | `1.37.0` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
-| `global.azure.images.tlsInit.digest` | TLS init container image digest override | Optional | `sha256:7a634b8e555c3f394551ae422325e7f9d9d1420e8ac7e8f7ac6ce311dca91b0d` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tlsInit.tag` | TLS init container image tag override when not using a digest | Optional | `1.37.0` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
+| `global.azure.images.tlsInit.digest` | TLS init container image digest | Yes (defaulted) | `sha256:92b1d1cae5f235812184415e63d9b24464116c58d3ba3c460b1eb0247f0f46e3` | `chart/values.yaml`, `chart/values.schema.json` | Helm only |
 
 ## Secret Material Passed Through External Secrets
 

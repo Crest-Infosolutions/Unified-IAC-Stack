@@ -1,0 +1,16 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: vault-license
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: SecretStore
+    name: azure-keyvault
+  target:
+    name: vault-license
+    creationPolicy: Owner
+  data:
+    - secretKey: VAULT_LICENSE
+      remoteRef:
+        key: vault-license

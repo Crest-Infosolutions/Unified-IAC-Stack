@@ -40,7 +40,7 @@ spec:
         runAsUser: 0
       containers:
         - name: vault
-          image: crest.azurecr.io/hashicorp/vault-enterprise-fips@sha256:9dbcfc5652839c048f80232581efb8d94e09e10b8ca0f0d29a0126e3d07930c9
+          image: crest.azurecr.io/hashicorp/vault-enterprise@sha256:24a5f804d52b8d73194a2266254e859f9eadc2d1a8ed964e2438b84f3d0103d1
           command:
             - /bin/sh
             - -c
@@ -52,6 +52,11 @@ spec:
               value: http://0.0.0.0:8200
             - name: VAULT_CLUSTER_ADDR
               value: http://127.0.0.1:8201
+            - name: VAULT_LICENSE
+              valueFrom:
+                secretKeyRef:
+                  name: vault-license
+                  key: VAULT_LICENSE
             - name: SKIP_CHOWN
               value: "true"
           ports:

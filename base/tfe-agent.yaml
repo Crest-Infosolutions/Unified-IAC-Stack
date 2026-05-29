@@ -19,7 +19,7 @@ spec:
       automountServiceAccountToken: true
       containers:
         - name: tfe-agent
-          image: crest.azurecr.io/hashicorp/tfc-agent@sha256:2a910a85203760d84de8da4a95d839599cb50253cfac1f4ed23a6bd94dd8f5f4
+          image: crest.azurecr.io/hashicorp/tfc-agent@sha256:cec9c92f86f6f27d9fef9c6f44461e48994207a71f70cd21749dd54e9a395765
           imagePullPolicy: Always
           env:
             - name: ARM_OIDC_TOKEN_FILE

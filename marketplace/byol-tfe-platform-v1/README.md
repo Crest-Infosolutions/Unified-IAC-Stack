@@ -50,6 +50,9 @@ marketplace/byol-tfe-platform-v1/
 
 - `manifest.yaml` currently points at `crest.azurecr.io`. Change it only if you publish from a different ACR.
 - `mainTemplate.json` contains `DONOTMODIFY` placeholders for the Marketplace plan metadata. These are expected in Marketplace samples and are completed during the packaging and Partner Center flow.
+- In Partner Center Technical configuration, the cluster extension type name is a separate manual field. Set it to a unique dotted value in `PublisherName.ApplicationName` format, not an undotted offer label such as `CrestInfoUnifiedIACStack`.
+- For this package, prefer `crestinfosolutions.byoltfeplatform` as the cluster extension type name so the published extension identity stays stable and recognizable.
+- The cluster extension type name cannot be changed after the plan reaches Preview, so record the exact value used for each published plan.
 - The chart defaults now resolve to digest-pinned Terraform Enterprise, TFE agent, and TLS init images in `crest.azurecr.io`.
 - The `hc-pull-secret` Key Vault object must contain Docker auth that can pull from `crest.azurecr.io`.
 

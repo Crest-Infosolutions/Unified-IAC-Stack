@@ -8,6 +8,8 @@ Use this checklist before opening a limited preview for the BYOL TFE Platform v1
 - [ ] The offer description matches the actual v1 scope: BYOL Terraform Enterprise, existing AKS only, external PostgreSQL, external Redis, Azure Blob Storage, Azure Key Vault, optional external Vault, single-region enterprise install contract.
 - [ ] The plan language is clearly BYOL and does not imply Microsoft-managed Terraform Enterprise licensing.
 - [ ] Publisher name, application name, description, and version in `manifest.yaml` match the Partner Center record.
+- [ ] The Partner Center cluster extension type name is a unique dotted value in `PublisherName.ApplicationName` format, not an undotted offer label. For this package, use `crestinfosolutions.byoltfeplatform` unless publishing has approved a different stable value.
+- [ ] The chosen cluster extension type name is recorded with the release notes before Preview because Partner Center does not let you change it after the plan is published to Preview.
 - [ ] Support contact, engineering escalation contact, privacy policy URL, and terms of use URL are populated in Partner Center.
 - [ ] Preview audience subscriptions are selected and documented.
 
@@ -95,6 +97,7 @@ Use these checks in order when the preview install fails:
 Do not submit a preview build if any of these remain true:
 
 - `manifest.yaml` still points at `youracr.azurecr.io`.
+- The Partner Center cluster extension type name is missing or is not in `PublisherName.ApplicationName` format.
 - CPA verification or bundle build has not been run on a supported host.
 - The preview dry run has not completed on a clean AKS validation cluster.
 - The docs in `CUSTOMER-PREREQUISITES.md` and `CUSTOMER-VALUES-MATRIX.md` do not match the current chart contract.
